@@ -14,26 +14,29 @@ Two audiences, and the split is deliberate:
 
 | Language | Frequency list | Lemma table | Pipeline |
 | --- | --- | --- | --- |
-| German (`de`) | ✅ 10,000 lemmas | ✅ 15,471 inflections | ✅ reproducible |
+| German (`de`) | ✅ 10,000 lemmas | ✅ 83,401 inflections | ✅ reproducible |
 | Arabic (`ar`) | ❌ | ❌ | ❌ corpora only — see below |
 
 ## The pipeline
 
 ```
   ┌─ acquire ──────────────┐   ┌─ transform ─────────────┐   ┌─ publish ────┐
-  │  Gutenberg · Wikipedia │   │  count → rank           │   │  Hugging     │
-  │  Hugging Face · Leipzig│──▶│  → lemmatize → re-rank  │──▶│  Face        │
-  │  utils/*.py   PYTHON   │   │  builders/*.mjs   NODE  │   │  hf/  PYTHON │
+  │  Leipzig corpora  CC BY│   │  lemma table (CC0)      │   │  Hugging     │
+  │  Wikidata Lexemes  CC0 │──▶│  → count → rank         │──▶│  Face        │
+  │  builders/fetch_*.py   │   │  builders/  PY + NODE   │   │  hf/  PYTHON │
   └────────────────────────┘   └─────────────────────────┘   └──────────────┘
           data/  (gitignored)      languages/<lang>/out/       N+1 datasets
 ```
 
-**Why two languages in one repo.** Acquisition and publishing are Python because that is where the
-Hugging Face tooling lives. The transformation stage is Node because it already exists, is already
-correct, and its comments record five specific silent failures that a rewrite would have to
-rediscover — see `provenance.json`'s `lemmatizerWarning`. The German corpora are not on this machine,
-so a rewrite could not even be verified. The seam between the two is a **file format**, not an API:
+**Why two languages in one repo, and why it is nearly one.** Everything is Python now except
+`build-frequency.mjs`, the ranker. The licence gate was ported first, checked byte-for-byte against
+the Node original across nine argument combinations spanning exit 0, 1 and 2; the lemmatizer was
+rewritten in Python outright when it moved to Wikidata. The seam is a **file format**, not an API:
 Leipzig's `rank <TAB> word <TAB> count`. Neither half imports the other.
+
+The ranker is the last piece. It is worth porting the same careful way — against the Node original,
+asserting identical bytes — because it is where the counts actually get summed onto lemmas, and a
+subtle change there is invisible in a diff of the output.
 
 ## Use it
 
@@ -43,21 +46,28 @@ make check           # licence + provenance gate  ← run this before anything
 make test            # the gate's own tests
 ```
 
-Nothing to install for `check` and `test` — the Node builders are dependency-free. The Python side
-uses [uv](https://docs.astral.sh/uv/): `uv sync`.
+Nothing to install for `check` and `test` — the gate is stdlib-only Python and must stay that way,
+which `test_gate.py` asserts. A gate that needs `uv sync` before it can tell you whether a licence
+is verified is a gate people route around. The transform builders are dependency-free Node. Only
+publishing needs [uv](https://docs.astral.sh/uv/): `uv sync`.
 
 ### Rebuilding German from scratch
 
 ```bash
-make corpora-de      # downloads Leipzig + clones the UD treebanks into data/
-make de              # two passes, ~1 minute
+make corpora-de      # downloads the Leipzig corpora into data/  (~130 MB)
+make de              # fetches the Wikidata dump if absent, then builds
 ```
 
-`make de` runs the build **twice** on purpose. Pass one ranks surface forms, because there is no
-lemma table yet; the lemma table is built from that ranking; pass two re-ranks with each surface
-count summed onto its lemma. Skipping pass two splits a word's frequency across its inflections —
-`vergangen`, `eigen` and `zweit` fall out of the top 10,000 while `vergangenen`, `eigenen` and
-`zweiten` stay in, and 750 entries end up with a key nothing can rank.
+The lemma table comes from **Wikidata Lexemes**, which is **CC0** — public domain, no attribution
+owed, and it expressly waives the EU database right that every share-alike alternative leaves open.
+That replaced the UD treebanks, which were CC BY-SA and quietly made the frequency list share-alike
+too; see `languages/de/sources.json`.
+
+Swapping the lemmatizer reproduced this project's worst bug class **three times in an hour** —
+`warten→warte`, `stärke→stärken`, and `in→-in`, the last of which deleted a top-20 German word by
+filing the preposition under the feminine *suffix*. All three are now pinned as tests in
+`builders/test_lemmas.py`. If you change the lemmatizer again, expect the same, and do not rely on
+diffing the output to catch it.
 
 ## Licensing is a gate, not a paragraph
 
@@ -69,12 +79,22 @@ says *"Confirm the current terms before shipping"* — and the Leipzig licence h
 anyway, once as CC BY-**NC**, which was briefly treated as a blocker that killed the language.
 
 It also catches the mistake a human reviewer reliably misses: **Hugging Face carries one licence
-field per dataset.** `frequency.txt` is CC BY, `lemmas.tsv` is CC BY-**SA**. Publish them together
-and share-alike swallows both, so every downstream user of the frequency list inherits an obligation
-— and a frequency list nobody can use permissively is not the public good this repo exists for.
+field per dataset.** Publish a CC BY-SA lemma table alongside a CC BY frequency list and share-alike
+swallows both, so every downstream user inherits an obligation — and a frequency list nobody can use
+permissively is not the public good this repo exists for.
 
-> **Nothing is publishable right now**, by design. Four upstream licences are unstamped. Read them,
-> set `licenceVerified` and `verifiedOn`, and the gate opens.
+Both German files are CC BY 4.0 today, so that constraint does not currently bind. It stays anyway,
+because it caught the real thing: `frequency.txt` was declared CC BY while being built *through* a
+CC BY-SA lemma table, and the check could not fire because `derivedFrom` did not mention it. **A gate
+only sees what it is told** — which is why there is now a separate test asserting the declaration
+matches what the build actually reads.
+
+> **The gate is open as of 2026-07-30.** All five German sources are stamped. Leipzig's terms were
+> read from their own page via the Wayback Machine (the live site is bot-gated and the tarballs ship
+> no licence file): CC BY-NC governs their **query portal**, while "All corpora provided for download
+> are licensed under CC BY" — the distinction the earlier CC BY-NC scare got wrong. One inconsistency
+> remains recorded and unresolved: Leipzig's own CLARIN repository labels other LCC corpora CC BY-NC.
+> None of ours are among them, but a confirming email is cheap insurance.
 
 ## Publishing to Hugging Face
 
@@ -109,9 +129,32 @@ bundle against the engine to measure a pack, so they cannot run here.
 
 ## Arabic
 
-The corpora are downloaded — `ara_news_2020_1M`, `ara_news_2022_1M`, `ara_wikipedia_2021_1M`, about
-3.2 GB — but **the code that processed them is gone**, deleted with the rest of the content pipeline
-on 2026-07-27. Only the archives and a 15 MB lemma cache survive.
+**The pipeline is not gone.** The 2026-07-27 reset archived the whole tree as a branch and a tag, so
+a complete, tested, already-Python, already-language-agnostic pipeline survives — along with the
+finished output: 77,400 MSA lemmas with vocalization, POS and Zipf scores, generated 2026-07-14.
+
+```bash
+git -C ../lughaty show archive/pre-reset-2026-07-27:tools/content/zipf/freqpipe/pipeline.py
+```
+
+The corpora (3.2 GB) and the 15 MB lemma cache are still on disk there too. Arabic is a **recovery**
+job, not a rewrite.
+
+⚠️ **What actually blocks it is the lemmatizer's licence.** That pipeline uses CAMeL Tools — MIT, but
+its `morphology-db-msa-r13` and `disambig-mle-calima-msa-r13` databases are **GPL v2**, and the
+output's vocalized column is database *content*: Leipzig's Arabic is undiacritized, so every diacritic
+was copied out of that lexicon.
+
+There is no permissive full-coverage MSA alternative. Every Arabic UD treebank is non-commercial or
+needs the Penn Arabic Treebank from the LDC ($13,500, research-only, redistribution still forbidden);
+Farasa is research-only, Alkhalil is NC, Qabas is no-derivatives. The free full-coverage option
+(BAMA, 38,600 lemmas) is GPL v2 — which is *why* CAMeL is GPL, since it descends from it.
+
+The likely route is the same one German took: **Wikidata Lexemes (CC0)** has 53,762 Arabic lexemes,
+~600–710k form→lemma pairs, and — usefully — every form fully diacritized, which is the exact thing
+the GPL database was holding hostage.
 
 Arabic also needs a decision German never faced: inherited dialect and written MSA are related but
-different systems, so "Arabic frequency" is at least two lists, measured separately.
+different systems, so "Arabic frequency" is at least two lists, measured separately. The archived
+77,400-lemma output is MSA only. Note the asymmetry that cuts across it — CAMeL's **dialect**
+databases (Gulf, Levantine) are CC BY 4.0; only the MSA one is GPL.

@@ -1,31 +1,36 @@
 {
   "language": "de",
-  "generatedOn": "2026-07-28",
+  "generatedOn": "2026-07-30",
   "recordedOn": "2026-07-30",
-  "⚠️": "These bytes were CARRIED OVER from younissk/lughaty packs/de, not regenerated here. The German source corpora are not on this machine, so the build has not been re-run since the move. The first regeneration must reproduce these checksums or explain why not.",
+  "⚠️": "REGENERATED on this machine on 2026-07-30 from local corpora — the first build since the move. The previous checksums were CARRIED OVER from younissk/lughaty packs/de and had never been reproduced here; they did not reproduce, and that was the correct result rather than a failure: those bytes came from a different repo's pipeline. The lemmatizer also CHANGED in this build, from the CC BY-SA UD treebanks to Wikidata Lexemes (CC0), so the outputs are not comparable to the old ones by design. See languages/de/sources.json licenceNote.",
   "files": {
     "frequency.txt": {
-      "sha256": "3fba3b7e9afd267a700a92144c16227889669608fb1bd5ea16a996a7d73a9e2b",
+      "sha256": "205d5df10d42a86a6f36a561e682af7cf5a6fe7d436468213dea839dc0693f89",
       "rows": 10000,
-      "bytes": 97050
+      "bytes": 97060
     },
     "lemmas.tsv": {
-      "sha256": "7c563dd72e02fc3bab6155868927924debcfe5d797f4b78ad7a05af7543dc4fb",
-      "rows": 15471,
-      "bytes": 345568
+      "sha256": "cb98f99877f38b55ad7a58341b94d6d9a7b94105babeaeb150db71b60c463257",
+      "rows": 83401,
+      "bytes": 2119215
     }
   },
   "method": {
-    "frequency": "Two passes. Pass 1 ranks surface forms; the lemma table is built from that ranking; pass 2 re-ranks with every surface count summed onto its LEMMA. One pass is wrong in a way that shows immediately — a word's frequency splits across its inflections, so `vergangen`, `eigen` and `zweit` miss the top 10,000 while their inflected forms make it, and 750 entries end up with an unrankable key.",
-    "lemmatizer": "Universal Dependencies treebanks, human-annotated FORM→LEMMA columns, homographs resolved by majority over the corpus. NOT rule-based.",
-    "lemmatizerWarning": "⚠️ An earlier rule-based version produced silent, plausible errors: warten→waren (to wait→were), Ware→war, Seite→seit, Stärke→stark. Every one passed a both-words-are-common guard. A learner who proved `waren` would have been credited with `warten`. Any future lemmatizer change must be diffed against these files, not merely re-run.",
+    "frequency": "ONE pass now. The old four-pass build existed because the treebank lemmatizer had to bootstrap off a surface ranking; Wikidata Lexemes is a standalone lexicon, so the table is complete before the first count is read. Every surface count is summed onto its LEMMA, and any key not attested in the corpora as a real surface form is dropped — that filter removed 85 entries that were 1990s spellings (kompromiß, paß) and lemmatizer artefacts (fachleut), and it is what keeps every published string traceable to CC BY Leipzig text.",
+    "lemmatizer": "Wikidata Lexemes (CC0), German Q188, dump of 2026-07-29: 241,967 lexemes. Homographs resolved by corpus frequency of the candidate lemma. Three guards, each added after it caught a real error during the swap: a content-word POS guard (warten→warte, stärke→stärken), an affix-lexeme filter (in→-in deleted a top-20 word), and chain/cycle resolution to a fixpoint (das↔der was a mutual cycle that split the article paradigm at the head of the list). Adjective and participle endings are generated from known lemmas because Wikidata carries almost no German adjective declension — generated only where the corpus attests the form and it is not already a lemma of its own.",
+    "lemmatizerWarning": "⚠️ An earlier rule-based version produced silent, plausible errors: warten→waren (to wait→were), Ware→war, Seite→seit, Stärke→stark. Every one passed a both-words-are-common guard. A learner who proved `waren` would have been credited with `warten`. THE 2026-07-30 WIKIDATA SWAP REPRODUCED THIS CLASS THREE TIMES WITHIN AN HOUR, each in a new way — which is why the cases are now pinned as tests in builders/test_lemmas.py rather than relying on someone diffing the output.",
     "filters": "Surface forms shorter than 2 characters or outside the pack tokenize pattern are dropped. A form survives only if it appears in more than one corpus or at least 20 times, which removes the OCR and typo tail."
   },
   "measured": {
     "coverageAt10kLemmas": {
       "heldOutNews": 0.88,
       "wikipedia": 0.82,
-      "note": "⚠️ ADR-0003 invariant 1 cites ~98% at 8,000 word FAMILIES. That is not this number and the two are not comparable — families are not lemmas, and the corpus and tokenizer are somebody else's. Do not read 88% as a shortfall against 98%."
+      "note": "⚠️ STALE AS OF 2026-07-30 — DO NOT CITE. These 0.88/0.82 figures were measured against the TREEBANK-derived list, which no longer exists: the lemmatizer changed to Wikidata Lexemes and 3,824 of the 10,000 entries moved. Nobody has re-measured. Left in place rather than deleted so the gap is visible and someone re-runs it. Original caveat, still true: ADR-0003 invariant 1 cites ~98% at 8,000 word FAMILIES, which is not comparable — families are not lemmas, and the corpus and tokenizer are somebody else's."
+    },
+    "lemmaTable": {
+      "rows": 83401,
+      "tokenCoverage": 0.287,
+      "note": "Share of Leipzig TOKENS whose surface form the table can map onto a lemma. The treebank table it replaced covered 25.5%. Measured on the same two corpora."
     }
   }
 }

@@ -102,13 +102,49 @@ for (const [index, file] of inputs.entries()) {
   console.error(`  ${file}: ${String(kept)} kept, ${String(skipped)} skipped`);
 }
 
+/**
+ * ⚠️ CORPUS-ATTESTATION FILTER. A key must occur somewhere in the corpus as a real surface form.
+ *
+ * Without this, pass 2 can emit a key that came from the LEMMA TABLE rather than from the text —
+ * `lemmaOf.get(surface)` returns a lemma string, and nothing checked that the string was ever
+ * written by a German speaker in these corpora. 85 of the 10,000 entries were like that:
+ *
+ *   18 are PRE-1996 SPELLINGS — `kompromiß`, `paß`, `kongreß`, `zuschuß` — whose modern `ss` form
+ *      IS in the corpus. They come from UD_German-HDT, which is heise.de text from 1996-2001.
+ *   67 are lemmatizer artefacts — `fachleut` is not a German word (Fachleute → Fachmann);
+ *      `studierend`, `dortig`, `vorherig` are bases that do not stand alone as entries.
+ *
+ * So the filter is a quality fix first. It has a licence consequence too, and a useful one: those
+ * 85 strings were the ONLY part of the output that came from the CC BY-SA treebanks rather than
+ * from CC BY Leipzig text. Dropping them means every surviving string is independently attested in
+ * a permissively licensed corpus. See languages/de/sources.json `licenceNote`.
+ */
+const attested = new Set();
+for (const file of inputs) {
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    const parts = line.split('\t');
+    if (parts.length >= 3 && parts[1]) attested.add(parts[1].toLowerCase());
+  }
+}
+
 // Typo and OCR filter. A real German word appears in more than one corpus, or a lot in one. This
 // removes the long tail of `dassder`, `Beeitschaft` and scanner noise that would otherwise occupy
 // slots in a 10k list and, worse, let `splitCompounds` accept nonsense parts.
+const dropped = [];
 const ranked = [...counts.entries()]
   .filter(([, v]) => v.corpora.size > 1 || v.total >= 20)
+  .filter(([w]) => {
+    if (attested.has(w)) return true;
+    dropped.push(w);
+    return false;
+  })
   .sort((a, b) => b[1].total - a[1].total || (a[0] < b[0] ? -1 : 1))
   .slice(0, LIMIT);
+
+if (dropped.length > 0) {
+  console.error(`  unattested keys dropped: ${String(dropped.length)}`);
+  console.error(`    ${dropped.slice(0, 12).join(' ')}${dropped.length > 12 ? ' …' : ''}`);
+}
 
 writeFileSync(out, ranked.map(([w]) => w).join('\n') + '\n');
 

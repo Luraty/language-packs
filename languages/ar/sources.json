@@ -1,39 +1,41 @@
 {
   "language": "ar",
   "name": "Arabic",
-  "status": "corpora acquired, no pipeline",
-  "note": "⚠️ The Arabic corpora below are DOWNLOADED but the code that processed them is GONE. It lived in the sibling repo's tools/content/zipf/ar_zipf/, which was deleted in the 2026-07-27 blank-canvas reset; only the archives and a 15 MB lemma_cache.json survive, in an unignored directory totalling 3.2 GB. Arabic also needs a decision the German pipeline never faced: inherited dialect and written MSA are separate systems and must be measured separately, so 'Arabic frequency' is at least two lists.",
+  "status": "corpora acquired, pipeline RECOVERABLE, blocked on a GPL-v2 lemma database",
+  "note": "⚠️ CORRECTED 2026-07-30. The earlier claim that the processing code is GONE is WRONG. The 2026-07-27 blank-canvas reset archived the whole pre-reset tree as both a branch and an annotated tag, pushed to origin: `git show archive/pre-reset-2026-07-27:tools/content/zipf/...` in the sibling lughaty repo. What survives there is not a fragment — it is a complete, tested, ALREADY-PYTHON, already language-agnostic pipeline (freqpipe + a LemmatizerAdapter seam, 7 test files, 43 pytest green), plus the finished Arabic output: out/ar_lemma_zipf.csv, 77,400 MSA lemmas with vocalization, POS, zipf and per-genre counts, generated 2026-07-14. The 3.2 GB of corpora and the 15 MB lemma_cache.json are still on disk at lughaty/tools/content/zipf/data/. Arabic is a RECOVERY job, not a rewrite.",
+  "blocker": "⚠️ THE REAL GATE, and the archived config understates it. That config records its lemmatizer licence as 'CAMeL Tools (MIT); morphology-db-msa-r13 + disambig-mle-calima-msa-r13' — true about the TOOL and silent about the DATA. Per CAMeL's own catalogue (raw.githubusercontent.com/CAMeL-Lab/camel-tools-data/main/catalogue-1.6.json, read 2026-07-30) BOTH of those packages are GPL v2. morphology-db-msa-s31 is worse: LDC, i.e. paid. This is not the usual 'GPL tool, output is yours' case — the csv's `lemma_vocalized` and `pos` columns are database CONTENT, not computation over the corpus: Leipzig's Arabic text is undiacritized, so every diacritic in that column was copied out of the GPL-v2 lexicon. That is the same shape as the German UD situation, where reading FORM/LEMMA out of a CC BY-SA treebank makes the lemma table CC BY-SA. Settle it before publishing anything Arabic. Note the escape hatch: morphology-db-glf-01 and morphology-db-lev-01 (Gulf, Levantine) are CC BY 4.0 — the DIALECT databases are permissive and only the MSA one is GPL v2, which cuts across the MSA-vs-dialect split below in a way nobody has costed.",
+  "openDecision": "Inherited dialect and written MSA are separate systems and must be measured separately, so 'Arabic frequency' is at least two lists. The archived 77,400-lemma output is MSA only (calima-msa). No dialect list exists.",
   "outputs": {},
   "sources": [
     {
       "id": "leipzig-ara_news_2020_1M",
       "name": "Leipzig Corpora Collection — ara_news_2020_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_news_2020_1M.tar.gz",
-      "licence": "CC-BY-3.0",
-      "licenceVerified": false,
-      "verifiedOn": null,
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
-      "note": "Downloaded. Same unread-licence problem as the German Leipzig sources."
+      "note": "VERIFIED 2026-07-30 from Leipzig's own terms page (wortschatz-leipzig.de/en/usage) via the Wayback Machine, the archives themselves being licence-free and the live page bot-gated. The page carries TWO grants in adjacent sentences: \"...licensed under the Creative Commons License CC BY-NC. [...] All corpora provided for download are licensed under CC BY.\" CC BY-NC governs the QUERY PORTAL; the download tarballs — which is what this repo fetches — are CC BY. That distinction is what the earlier CC BY-NC claim got wrong: a scope error, not a licence change. The wording is identical in every snapshot from 2017-04-06 to 2026-02-06, so both the 2022 and 2025 downloads are covered. Version 4.0 confirmed from the href on \"CC BY\" (creativecommons.org/licenses/by/4.0/), not assumed — the visible text gives no version. ⚠️ ONE UNRESOLVED DISCREPANCY, recorded rather than smoothed over: Leipzig's own CLARIN repository (repo.data.saw-leipzig.de) labels 87 LCC records CC BY-NC 4.0. None of the corpora used here are among them, and it is a different packaging on a different channel with its own stated NC default — but it is an inconsistency AT THE SOURCE. Given this project has had the Leipzig licence wrong twice, one email asking LCC to confirm CC BY 4.0 for the tarballs and explain that discrepancy is worth ten minutes before a public release."
     },
     {
       "id": "leipzig-ara_news_2022_1M",
       "name": "Leipzig Corpora Collection — ara_news_2022_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_news_2022_1M.tar.gz",
-      "licence": "CC-BY-3.0",
-      "licenceVerified": false,
-      "verifiedOn": null,
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
-      "note": "Downloaded."
+      "note": "VERIFIED 2026-07-30 from Leipzig's own terms page (wortschatz-leipzig.de/en/usage) via the Wayback Machine, the archives themselves being licence-free and the live page bot-gated. The page carries TWO grants in adjacent sentences: \"...licensed under the Creative Commons License CC BY-NC. [...] All corpora provided for download are licensed under CC BY.\" CC BY-NC governs the QUERY PORTAL; the download tarballs — which is what this repo fetches — are CC BY. That distinction is what the earlier CC BY-NC claim got wrong: a scope error, not a licence change. The wording is identical in every snapshot from 2017-04-06 to 2026-02-06, so both the 2022 and 2025 downloads are covered. Version 4.0 confirmed from the href on \"CC BY\" (creativecommons.org/licenses/by/4.0/), not assumed — the visible text gives no version. ⚠️ ONE UNRESOLVED DISCREPANCY, recorded rather than smoothed over: Leipzig's own CLARIN repository (repo.data.saw-leipzig.de) labels 87 LCC records CC BY-NC 4.0. None of the corpora used here are among them, and it is a different packaging on a different channel with its own stated NC default — but it is an inconsistency AT THE SOURCE. Given this project has had the Leipzig licence wrong twice, one email asking LCC to confirm CC BY 4.0 for the tarballs and explain that discrepancy is worth ten minutes before a public release."
     },
     {
       "id": "leipzig-ara_wikipedia_2021_1M",
       "name": "Leipzig Corpora Collection — ara_wikipedia_2021_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_wikipedia_2021_1M.tar.gz",
-      "licence": "CC-BY-3.0",
-      "licenceVerified": false,
-      "verifiedOn": null,
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
-      "note": "Downloaded. Wikipedia text underneath is CC BY-SA — check whether Leipzig's redistribution terms or Wikipedia's govern a derived count list before publishing anything from this one."
+      "note": "VERIFIED 2026-07-30 from Leipzig's own terms page (wortschatz-leipzig.de/en/usage) via the Wayback Machine, the archives themselves being licence-free and the live page bot-gated. The page carries TWO grants in adjacent sentences: \"...licensed under the Creative Commons License CC BY-NC. [...] All corpora provided for download are licensed under CC BY.\" CC BY-NC governs the QUERY PORTAL; the download tarballs — which is what this repo fetches — are CC BY. That distinction is what the earlier CC BY-NC claim got wrong: a scope error, not a licence change. The wording is identical in every snapshot from 2017-04-06 to 2026-02-06, so both the 2022 and 2025 downloads are covered. Version 4.0 confirmed from the href on \"CC BY\" (creativecommons.org/licenses/by/4.0/), not assumed — the visible text gives no version. ⚠️ ONE UNRESOLVED DISCREPANCY, recorded rather than smoothed over: Leipzig's own CLARIN repository (repo.data.saw-leipzig.de) labels 87 LCC records CC BY-NC 4.0. None of the corpora used here are among them, and it is a different packaging on a different channel with its own stated NC default — but it is an inconsistency AT THE SOURCE. Given this project has had the Leipzig licence wrong twice, one email asking LCC to confirm CC BY 4.0 for the tarballs and explain that discrepancy is worth ten minutes before a public release. ⚠️ ara_wikipedia_2021_1M ONLY: its upstream is Arabic Wikipedia (CC BY-SA), so Leipzig arguably grants more than it holds. A count table incorporates no source expression, but the clean fix is to build Arabic from the two NEWS corpora only."
     }
   ]
 }

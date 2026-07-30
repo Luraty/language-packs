@@ -74,7 +74,7 @@ def gate(target: str) -> None:
     invoked the other way.
     """
     result = subprocess.run(
-        ["node", str(ROOT / "builders" / "check-sources.mjs"), "--publish", target],
+        [sys.executable, str(ROOT / "builders" / "check_sources.py"), "--publish", target],
         cwd=ROOT,
     )
     if result.returncode != 0:
