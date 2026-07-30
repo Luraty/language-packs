@@ -1,0 +1,28 @@
+# Secrets. Also covered by ~/.config/git/ignore on the author's machine — that is a MACHINE
+# setting, not a repository one, so it does not travel. This line is the one that does.
+.env
+.env.*
+!.example.env
+
+# Downloaded corpora. gutenberg.py writes data/gutenberg/<id>.txt by default, and Leipzig archives
+# are hundreds of megabytes each.
+#
+# ⚠️ THIS IS NOT HOUSEKEEPING. The sibling repo accumulated 3.2 GB of downloaded corpora in an
+# unignored directory; a single `git add -A` would have staged all of it. Downloads are
+# reproducible from languages/*/sources.json — the derived lists are what this repo publishes.
+data/
+corpora/
+*.tar.gz
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+
+# Node — the builders are dependency-free, but nothing stops a future one needing a package.
+node_modules/
+
+# Scratch output
+reports/

@@ -1,0 +1,31 @@
+{
+  "language": "de",
+  "generatedOn": "2026-07-28",
+  "recordedOn": "2026-07-30",
+  "⚠️": "These bytes were CARRIED OVER from younissk/lughaty packs/de, not regenerated here. The German source corpora are not on this machine, so the build has not been re-run since the move. The first regeneration must reproduce these checksums or explain why not.",
+  "files": {
+    "frequency.txt": {
+      "sha256": "3fba3b7e9afd267a700a92144c16227889669608fb1bd5ea16a996a7d73a9e2b",
+      "rows": 10000,
+      "bytes": 97050
+    },
+    "lemmas.tsv": {
+      "sha256": "7c563dd72e02fc3bab6155868927924debcfe5d797f4b78ad7a05af7543dc4fb",
+      "rows": 15471,
+      "bytes": 345568
+    }
+  },
+  "method": {
+    "frequency": "Two passes. Pass 1 ranks surface forms; the lemma table is built from that ranking; pass 2 re-ranks with every surface count summed onto its LEMMA. One pass is wrong in a way that shows immediately — a word's frequency splits across its inflections, so `vergangen`, `eigen` and `zweit` miss the top 10,000 while their inflected forms make it, and 750 entries end up with an unrankable key.",
+    "lemmatizer": "Universal Dependencies treebanks, human-annotated FORM→LEMMA columns, homographs resolved by majority over the corpus. NOT rule-based.",
+    "lemmatizerWarning": "⚠️ An earlier rule-based version produced silent, plausible errors: warten→waren (to wait→were), Ware→war, Seite→seit, Stärke→stark. Every one passed a both-words-are-common guard. A learner who proved `waren` would have been credited with `warten`. Any future lemmatizer change must be diffed against these files, not merely re-run.",
+    "filters": "Surface forms shorter than 2 characters or outside the pack tokenize pattern are dropped. A form survives only if it appears in more than one corpus or at least 20 times, which removes the OCR and typo tail."
+  },
+  "measured": {
+    "coverageAt10kLemmas": {
+      "heldOutNews": 0.88,
+      "wikipedia": 0.82,
+      "note": "⚠️ ADR-0003 invariant 1 cites ~98% at 8,000 word FAMILIES. That is not this number and the two are not comparable — families are not lemmas, and the corpus and tokenizer are somebody else's. Do not read 88% as a shortfall against 98%."
+    }
+  }
+}

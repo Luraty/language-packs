@@ -1,0 +1,21 @@
+{
+  "language": "xx",
+  "name": "Clean fixture — everything stamped, nothing contaminated",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["stamped"],
+      "licence": "CC-BY-4.0",
+      "publish": { "huggingface": "nobody/nothing" }
+    }
+  },
+  "sources": [
+    {
+      "id": "stamped",
+      "name": "A fully verified permissive source",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true
+    }
+  ]
+}

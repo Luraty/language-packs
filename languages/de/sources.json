@@ -1,0 +1,77 @@
+{
+  "language": "de",
+  "name": "German",
+  "outputs": {
+    "out/frequency.txt": {
+      "description": "The 10,000 commonest German lemmas, commonest first.",
+      "derivedFrom": ["leipzig-deu_news_2024_300K", "leipzig-deu-de_web_2021_300K"],
+      "licence": "CC-BY-3.0",
+      "publish": {
+        "huggingface": "younissk/german-word-frequency",
+        "prettyName": "German Word Frequency List (10,000 lemmas)",
+        "languageName": "German",
+        "corpusSummary": "300,000 sentences of German news (2024) and 300,000 of German web text (2021) from the Leipzig Corpora Collection",
+        "registerCaveat": "These corpora are news and web text, so the list over-weights politics, sport and economics and under-weights conversation. For spoken or everyday German, weight it against a spoken corpus."
+      }
+    },
+    "out/lemmas.tsv": {
+      "description": "15,471 inflected surface forms mapped to their lemma.",
+      "derivedFrom": ["ud-german-gsd", "ud-german-hdt", "luraty-irregulars-de"],
+      "licence": "CC-BY-SA-4.0",
+      "publish": null,
+      "publishNote": "⚠️ NOT bundled with frequency.txt. Share-alike would contaminate the CC BY list, and a frequency list nobody can use permissively is not the public good this repo is for. Ship it separately or not at all."
+    }
+  },
+  "sources": [
+    {
+      "id": "leipzig-deu_news_2024_300K",
+      "name": "Leipzig Corpora Collection — deu_news_2024_300K",
+      "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_news_2024_300K.tar.gz",
+      "licence": "CC-BY-3.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "redistributeDerived": true,
+      "note": "The downloaded archive ships NO licence file; the CC BY claim comes from the project's web pages, which are bot-protected and could not be read. An earlier note in the sibling repo claimed CC BY-NC and was wrong. Read the terms and stamp this before publishing."
+    },
+    {
+      "id": "leipzig-deu-de_web_2021_300K",
+      "name": "Leipzig Corpora Collection — deu-de_web_2021_300K",
+      "url": "https://downloads.wortschatz-leipzig.de/corpora/deu-de_web_2021_300K.tar.gz",
+      "licence": "CC-BY-3.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "redistributeDerived": true,
+      "note": "Same archive family, same unread licence. Verify with the other Leipzig source in one pass."
+    },
+    {
+      "id": "ud-german-gsd",
+      "name": "Universal Dependencies — German-GSD treebank",
+      "url": "https://github.com/UniversalDependencies/UD_German-GSD",
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "redistributeDerived": true,
+      "note": "Asserted in the German pack's ATTRIBUTION.md on 2026-07-28; the treebank's own LICENSE.txt has not been read here. Cheap to close — clone and read it."
+    },
+    {
+      "id": "ud-german-hdt",
+      "name": "Universal Dependencies — German-HDT treebank",
+      "url": "https://github.com/UniversalDependencies/UD_German-HDT",
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "redistributeDerived": true,
+      "note": "⚠️ Annotation is CC BY-SA 4.0 but the underlying TEXT is academic-use only. Only the FORM and LEMMA columns are read and no source text is redistributed, which is what keeps this usable — do not widen the extraction without re-reading the terms."
+    },
+    {
+      "id": "luraty-irregulars-de",
+      "name": "irregulars.tsv — hand-written for this project",
+      "url": null,
+      "licence": "MIT",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "note": "Original work, no upstream. Verified by authorship."
+    }
+  ]
+}

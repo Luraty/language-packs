@@ -1,0 +1,28 @@
+{
+  "language": "xx",
+  "name": "Stamp fixture — a verified claim with no date, and a non-boolean flag",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["dateless"],
+      "licence": "CC-BY-4.0",
+      "publish": { "huggingface": "nobody/nothing" }
+    }
+  },
+  "sources": [
+    {
+      "id": "dateless",
+      "name": "Claims verification but records no date",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "redistributeDerived": true
+    },
+    {
+      "id": "fuzzy",
+      "name": "Uses a truthy string where a boolean is required",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": "yes",
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true
+    }
+  ]
+}

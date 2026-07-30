@@ -1,0 +1,51 @@
+This repository is licensed in two layers. They are not the same and the difference matters.
+
+═══════════════════════════════════════════════════════════════════════════════
+1. THE CODE — MIT
+═══════════════════════════════════════════════════════════════════════════════
+
+Everything under builders/, hf/, utils/, and main.py.
+
+MIT License
+
+Copyright (c) 2026 Youniss Kandah
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. THE DATA — PER LANGUAGE, PER FILE. NOT MIT.
+═══════════════════════════════════════════════════════════════════════════════
+
+Everything under languages/*/out/ is DERIVED DATA, and it inherits the licence
+of the corpus it was derived from. MIT does not apply to it and never did.
+
+The authoritative record is languages/<lang>/sources.json — machine-readable,
+one entry per upstream source, each with an explicit licence, a verification
+stamp and a redistribution verdict. languages/<lang>/SOURCES.md is the human
+version. `make check` refuses a tree whose declarations are inconsistent, and
+`make publish-*` refuses to ship a file whose sources are unverified.
+
+Today, for German:
+
+  out/frequency.txt   CC BY 3.0      derived from Leipzig Corpora Collection
+  out/lemmas.tsv      CC BY-SA 4.0   derived from Universal Dependencies
+
+⚠️ Those two do not mix. Bundling a share-alike file into a permissive dataset
+makes the whole thing share-alike, so they are published — if at all —
+separately. The gate enforces this rather than trusting anyone to remember it.

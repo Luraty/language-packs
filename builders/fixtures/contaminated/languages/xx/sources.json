@@ -1,0 +1,29 @@
+{
+  "language": "xx",
+  "name": "Contamination fixture — a CC BY output derived from a CC BY-SA source",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["permissive", "share-alike"],
+      "licence": "CC-BY-4.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "permissive",
+      "name": "A permissive source",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true
+    },
+    {
+      "id": "share-alike",
+      "name": "A share-alike source that must contaminate the output",
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true
+    }
+  ]
+}
