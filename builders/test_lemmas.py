@@ -34,6 +34,9 @@ FREQUENCY = ROOT / "languages" / "de" / "out" / "frequency.txt"
 # never read — that would fail for a reason that has nothing to do with the lemmatizer.
 LANGUAGES = {"de": ["deu_news_2024_300K", "deu-de_web_2021_300K"],
              "ar": ["ara_news_2020_1M", "ara_news_2022_1M"]}
+# ar-x-quran is ranked against its own corpus, which is generated rather than downloaded, so its
+# attestation check reads that file instead of a Leipzig directory.
+QURAN_WORDS = ROOT / "data" / "quran" / "quran-words.txt"
 
 
 def table(language: str = "de") -> dict[str, str]:
@@ -112,11 +115,49 @@ class ArabicSilentErrors(unittest.TestCase):
                 self.assertEqual(rows.get(form), lemma)
 
 
+class QuranicArabic(unittest.TestCase):
+    """The Qur'anic pack reproduced the Arabic failure a third time, for a third reason.
+
+    Built against its own 77,878-token corpus alone, the homograph tiebreak had too thin a frequency
+    signal and `في` landed under the rare verb `وفى` — the same wrong top ten as the first MSA build.
+    The lemma table is therefore built against Leipzig AND the Qur'an, with Leipzig doing the
+    deciding. Separately, an unconditional Uthmani rewrite turned `على` into `علي`."""
+
+    def test_the_frequency_list_starts_with_function_words(self):
+        entries = [w for w in (ROOT / "languages" / "ar-x-quran" / "out" / "frequency.txt")
+                   .read_text("utf-8").split("\n") if w]
+        self.assertEqual(entries[:5], ["من", "الله", "على", "في", "كان"])
+
+    def test_maqsura_final_words_are_not_rewritten_to_ya(self):
+        # على، إلى، حتى، متى end in alef maqsura in MODERN orthography too. An unconditional
+        # final ى→ي corrupts them, and they are among the commonest words in the text.
+        entries = set(w for w in (ROOT / "languages" / "ar-x-quran" / "out" / "frequency.txt")
+                      .read_text("utf-8").split("\n") if w)
+        for correct, wrong in [("على", "علي"), ("إلى", "إلي"), ("حتى", "حتي")]:
+            with self.subTest(word=correct):
+                self.assertIn(correct, entries)
+                self.assertNotIn(wrong, entries)
+
+    def test_the_uthmani_column_covers_every_key_and_actually_differs(self):
+        freq = [w for w in (ROOT / "languages" / "ar-x-quran" / "out" / "frequency.txt")
+                .read_text("utf-8").split("\n") if w]
+        uthmani = {}
+        for line in (ROOT / "languages" / "ar-x-quran" / "out" / "uthmani.tsv").read_text("utf-8").split("\n"):
+            parts = line.split("\t")
+            if len(parts) >= 2 and parts[0]:
+                uthmani[parts[0]] = parts[1]
+        missing = [w for w in freq if w not in uthmani]
+        self.assertEqual(missing, [], f"{len(missing)} keys have no mushaf spelling: {missing[:5]}")
+        # If nothing differed, the normalization would be a no-op and the column pointless.
+        self.assertEqual(uthmani.get("الله"), "ٱلله")
+        self.assertGreater(sum(1 for k, v in uthmani.items() if k != v), 1000)
+
+
 class TableShape(unittest.TestCase):
     def test_no_unresolved_chains(self):
         # build-frequency does ONE lookup, so `a → b → c` files `a` under `b` while `b` files under
         # `c`, and both survive into the list as separate entries.
-        for language in LANGUAGES:
+        for language in list(LANGUAGES) + ["ar-x-quran"]:
             with self.subTest(language=language):
                 rows = table(language)
                 chains = [(f, t, rows[t]) for f, t in rows.items() if t in rows]
@@ -129,13 +170,16 @@ class TableShape(unittest.TestCase):
         import re
 
         marks = re.compile("[\u064B-\u0652\u0670\u0640]")
-        for language, corpus_names in LANGUAGES.items():
+        targets = {**LANGUAGES, "ar-x-quran": None}
+        for language, corpus_names in targets.items():
             with self.subTest(language=language):
-                corpora = [p for name in corpus_names
-                           for p in (ROOT / "data" / "leipzig" / name).glob("*-words.txt")]
+                corpora = ([QURAN_WORDS] if corpus_names is None
+                           else [p for name in corpus_names
+                                 for p in (ROOT / "data" / "leipzig" / name).glob("*-words.txt")])
+                corpora = [p for p in corpora if p.exists()]
                 if not corpora:
                     self.skipTest(f"corpora not downloaded; run `make corpora-{language}`")
-                normalize = (lambda w: marks.sub("", w)) if language == "ar" else str.lower
+                normalize = (lambda w: marks.sub("", w)) if language.startswith("ar") else str.lower
                 attested = set()
                 for path in corpora:
                     for line in path.read_text("utf-8", errors="replace").split("\n"):

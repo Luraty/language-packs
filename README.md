@@ -16,6 +16,7 @@ Two audiences, and the split is deliberate:
 | --- | --- | --- | --- |
 | German (`de`) | ✅ 10,000 lemmas | ✅ 83,361 inflections | ✅ reproducible |
 | Arabic (`ar`) | ✅ 10,000 MSA lemmas | ✅ 86,910 inflections | ✅ reproducible |
+| Qur'anic Arabic (`ar-x-quran`) | ✅ 9,598 lemmas | ✅ + mushaf spelling | ✅ reproducible |
 
 ## The pipeline
 
@@ -127,6 +128,29 @@ npm, the pack moves here and the duplication ends. Recorded as
 
 Two analysis tools stayed behind for the same reason — `coverage-curve.mjs` and `diagnose-gap.mjs`
 bundle against the engine to measure a pack, so they cannot run here.
+
+## Qur'anic Arabic
+
+```bash
+make quran
+```
+
+The cleanest pack here: the text is 7th-century and public domain, the lexicon is CC0, so there is no
+upstream licence to inherit. 77,878 word tokens → **9,598 lemmas**.
+
+**`ar-x-quran`, not `ar-QA`** — `QA` is the region code for *Qatar*. Per the IANA registry there is
+no registered variant subtag for Arabic and no ISO code for Classical Arabic, so BCP 47 private use
+is the only well-formed way to say this.
+
+Keys are modern orthography; `out/uthmani.tsv` holds the mushaf spelling, which differs for 2,689
+forms (`ٱلله`→`الله`, `فى`→`في`, `ءامنوا`→`آمنوا`). Handling that lifted lexicon coverage from 58.0%
+of tokens to 78.8% — but each rewrite is conditional on resolving to a known word, because an
+unconditional final `ى`→`ي` turns `على` into `علي`.
+
+⚠️ Not usable, despite being the obvious tool: the Quranic Arabic Corpus is GPL **and** states
+"CHANGING IT IS NOT ALLOWED."
+
+⚠️ A single closed text, so the counts describe the Qur'an exactly rather than sampling a language.
 
 ## Arabic
 

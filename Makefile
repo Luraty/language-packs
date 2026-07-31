@@ -18,10 +18,18 @@ AR_OUT       := $(AR)/out
 AR_WORDS     := data/leipzig/ara_news_2020_1M/ara_news_2020_1M-words.txt \
                 data/leipzig/ara_news_2022_1M/ara_news_2022_1M-words.txt
 WIKIDATA_AR  := data/wikidata/ar.tsv
+# ⚠️ ar-x-quran, not ar-QA. `QA` is the ISO region code for QATAR, so `ar-QA` means "Arabic as used
+# in Qatar" to every BCP 47 parser. There is no registered variant subtag for Arabic at all (checked
+# against the IANA registry) and no ISO code for Classical Arabic — Classical Syriac has `syc` and
+# Classical Armenian `xcl`, but Arabic's classical register is folded into `arb`. Private use
+# (`-x-`) is therefore the only well-formed way to say this, and it cannot collide with a country.
+QUR          := languages/ar-x-quran
+QUR_OUT      := $(QUR)/out
+QUR_WORDS    := data/quran/quran-words.txt
 LUGHATY      := ../lughaty
 
 .DEFAULT_GOAL := help
-.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar publish-de sync-pack-de
+.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar quran publish-de sync-pack-de
 
 help:
 	@echo ''
@@ -35,6 +43,7 @@ help:
 	@echo '  de                 rebuild the German list and lemma table (fetches Wikidata if absent)'
 	@echo '  corpora-ar         download the Arabic Leipzig news corpora into data/  (~600 MB)'
 	@echo '  ar                 rebuild the Arabic list and lemma table'
+	@echo '  quran              rebuild the Qur'"'"'anic Arabic list (ar-x-quran)'
 	@echo ''
 	@echo '  publish-de         push the German frequency list to Hugging Face'
 	@echo '                     Gate is OPEN as of 2026-07-30 — this really will publish'
@@ -130,6 +139,39 @@ corpora-ar:
 	    tar -xzf $$c.tar.gz; }; \
 	done
 	@echo '  corpora ready in data/'
+
+# ── qur'anic arabic ───────────────────────────────────────────────────────────────────────────
+# A separate pack rather than a register of `ar`, for the same reason the Hugging Face repos are
+# named for the search: somebody looking for Qur'anic vocabulary is not looking for a general Arabic
+# frequency list. Different corpus, different orthography, different register — but the SAME
+# pipeline, because it is still Arabic script and still the CC0 Wikidata lexicon.
+
+# ⚠️ THE LEMMA TABLE IS BUILT AGAINST BOTH CORPORA, and that is not an accident. Its homograph
+# tiebreak and rarity guard are STATISTICAL: they need a large frequency signal to decide that في is
+# a word in its own right and not an inflection of the rare verb وفى. Built against the Qur'an alone
+# — 77,878 tokens — those statistics are too thin and في lands under وفى, which is precisely the
+# error that made the first Arabic build's top ten wrong. Leipzig's 10M tokens do the deciding; the
+# Qur'an contributes its own vocabulary for attestation. Only the RANKING below uses Qur'anic counts.
+quran: $(WIKIDATA_AR) $(QUR_WORDS)
+	@test -f $(firstword $(AR_WORDS)) || { echo '  needs the ar corpora too — run: make corpora-ar'; exit 1; }
+	@mkdir -p $(QUR_OUT)
+	@echo '  pass 1/2 — form→lemma table from Wikidata Lexemes (CC0)'
+	@python3 builders/build_lemmas_wikidata.py $(WIKIDATA_AR) $(AR_WORDS) $(QUR_WORDS) \
+	  --script arabic --out $(QUR_OUT)/lemmas.tsv
+	@echo '  pass 2/2 — rank, counts summed onto lemmas'
+	@node builders/build-frequency.mjs $(QUR_WORDS) --lemmas $(QUR_OUT)/lemmas.tsv \
+	  --script arabic --min-count 1 --out $(QUR_OUT)/frequency.txt --limit 10000
+	@cp data/quran/uthmani.tsv $(QUR_OUT)/uthmani.tsv
+	@echo ''
+	@echo '  ⚠️  KEYS ARE MODERN ORTHOGRAPHY, uthmani.tsv holds the mushaf spelling. The rewrites'
+	@echo '      are conditional on the lexicon — an unconditional final ى→ي turns على into علي.'
+	@echo '      --min-count 1 because the mushaf is a curated text with no OCR tail to filter;'
+	@echo '      a word occurring once in the Qur'"'"'an is a real word, not scanner noise.'
+
+$(QUR_WORDS): $(WIKIDATA_AR)
+	@echo '  fetching the Qur'"'"'anic text (public domain; MIT-packaged digitization)'
+	@python3 builders/fetch_quran.py --out $(QUR_WORDS) \
+	  --uthmani data/quran/uthmani.tsv --wikidata $(WIKIDATA_AR)
 
 # ── publish ───────────────────────────────────────────────────────────────────────────────────
 # The gate runs FIRST and its failure stops the target.

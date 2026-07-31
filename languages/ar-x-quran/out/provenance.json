@@ -1,0 +1,40 @@
+{
+  "language": "ar-x-quran",
+  "generatedOn": "2026-07-30",
+  "recordedOn": "2026-07-30",
+  "⚠️": "First build. The corpus is a single closed text, so unlike German and Arabic these counts are not a sample of a language — they describe the Qur'an exactly.",
+  "files": {
+    "frequency.txt": {
+      "sha256": "a4c424990ef8ed13e002b3bb297d1dbb96c591ab72c510fdaa11e880655ac4da",
+      "rows": 9598,
+      "bytes": 114674
+    },
+    "lemmas.tsv": {
+      "sha256": "455c027dd208c96b3c649726df432b53a937bd04a1234f191edcd432b1b4bafb",
+      "rows": 87860,
+      "bytes": 1872991
+    },
+    "uthmani.tsv": {
+      "sha256": "a35d3eaed05c3ac3a1c15358fa1dd931c4938c228984a53df15a83897aa25b56",
+      "rows": 14811,
+      "bytes": 342800
+    }
+  },
+  "method": {
+    "frequency": "One pass over the full mushaf: 6,348 stored verses (6,236 canonical + 112 basmala entries), 77,878 word tokens, 14,811 distinct surface forms, summed onto lemmas. --min-count 1 because a curated text has no OCR tail to filter — a word occurring once in the Qur'an is a real word. The default floor of 20, tuned for Leipzig's ~10M tokens, deleted 97% of the vocabulary and produced a 404-entry list.",
+    "lemmatizer": "Wikidata Lexemes (CC0), Arabic Q13955. The table is built against the Leipzig Arabic corpora AND the Qur'an together — see sources.json wikidata-lexemes-ar. Ranking uses Qur'anic counts only.",
+    "orthography": "Uthmani → modern rewrites, each conditional on resolving to a known word: ٱ→ا, ءا→آ, ىء→يء, final ى→ي. Unconditional rules corrupt the head of the list (على→علي). 2,689 of 14,811 forms differ from their mushaf spelling; out/uthmani.tsv preserves it."
+  },
+  "measured": {
+    "lexiconCoverage": {
+      "bare": 0.58,
+      "plusDefiniteArticle": 0.6,
+      "plusProclitics": 0.746,
+      "plusOrthography": 0.788,
+      "note": "Share of Qur'anic TOKENS that the CC0 Wikidata lexicon recognises, at each stage of normalization. Measured 2026-07-30."
+    },
+    "coverage": {
+      "note": "⚠️ NOT MEASURED. No held-out evaluation exists — and for a single closed text the usual notion of held-out coverage does not straightforwardly apply. Do not cite a figure."
+    }
+  }
+}

@@ -22,18 +22,26 @@ const lemmaIndex = args.indexOf('--lemmas');
 const lemmaFile = lemmaIndex >= 0 ? args[lemmaIndex + 1] : undefined;
 const limitIndex = args.indexOf('--limit');
 const LIMIT = limitIndex >= 0 ? Number(args[limitIndex + 1]) : 10000;
+// ⚠️ THE NOISE FLOOR IS CORPUS-SIZE DEPENDENT, and the default is tuned for Leipzig's ~10M tokens.
+// The Qur'an is 77,878 tokens — roughly 130x smaller — so a fixed `>= 20` floor deleted 97% of its
+// vocabulary and produced a 404-entry list where 10,000 were asked for. Scale it to the corpus, or
+// set it explicitly.
+const minCountIndex = args.indexOf('--min-count');
+const MIN_COUNT = minCountIndex >= 0 ? Number(args[minCountIndex + 1]) : 20;
 const scriptIndex = args.indexOf('--script');
 const scriptName = scriptIndex >= 0 ? args[scriptIndex + 1] : 'latin';
 // ⚠️ The `>= 0` guards are not decoration. `indexOf` returns -1 for an absent flag, and -1 + 1 is
 // 0 — which silently excluded the FIRST positional argument whenever `--lemmas` was omitted, so the
 // script reported "usage:" on a perfectly good command line.
 const valueIndices = new Set(
-  [outIndex, limitIndex, lemmaIndex, scriptIndex].filter((i) => i >= 0).map((i) => i + 1),
+  [outIndex, limitIndex, lemmaIndex, scriptIndex, minCountIndex]
+    .filter((i) => i >= 0)
+    .map((i) => i + 1),
 );
 const inputs = args.filter((a, i) => !a.startsWith('--') && !valueIndices.has(i));
 
 if (out === undefined || inputs.length === 0) {
-  console.error('usage: build-frequency.mjs <words.txt>... --out <file> [--limit 10000] [--script latin|arabic]');
+  console.error('usage: build-frequency.mjs <words.txt>... --out <file> [--limit 10000] [--script latin|arabic] [--min-count 20]');
   process.exit(2);
 }
 
@@ -154,12 +162,13 @@ for (const file of inputs) {
   }
 }
 
-// Typo and OCR filter. A real German word appears in more than one corpus, or a lot in one. This
-// removes the long tail of `dassder`, `Beeitschaft` and scanner noise that would otherwise occupy
-// slots in a 10k list and, worse, let `splitCompounds` accept nonsense parts.
+// Typo and OCR filter. A real word appears in more than one corpus, or a lot in one. This removes
+// the long tail of `dassder`, `Beeitschaft` and scanner noise that would otherwise occupy slots in a
+// 10k list and, worse, let `splitCompounds` accept nonsense parts. See --min-count above: the floor
+// only means something relative to corpus size.
 const dropped = [];
 const ranked = [...counts.entries()]
-  .filter(([, v]) => v.corpora.size > 1 || v.total >= 20)
+  .filter(([, v]) => v.corpora.size > 1 || v.total >= MIN_COUNT)
   .filter(([w]) => {
     if (attested.has(w)) return true;
     dropped.push(w);
