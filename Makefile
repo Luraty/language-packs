@@ -29,7 +29,7 @@ QUR_WORDS    := data/quran/quran-words.txt
 LUGHATY      := ../lughaty
 
 .DEFAULT_GOAL := help
-.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar quran publish-de sync-pack-de
+.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar quran publish-de publish-ar publish-quran sync-pack-de
 
 help:
 	@echo ''
@@ -46,7 +46,10 @@ help:
 	@echo '  quran              rebuild the Qur'"'"'anic Arabic list (ar-x-quran)'
 	@echo ''
 	@echo '  publish-de         push the German frequency list to Hugging Face'
-	@echo '                     Gate is OPEN as of 2026-07-30 — this really will publish'
+	@echo '  publish-ar         push the Arabic frequency list'
+	@echo '  publish-quran      push the Qur'"'"'anic Arabic frequency list'
+	@echo '                     ⚠️ Gate is OPEN as of 2026-07-30 — these really will publish,'
+	@echo '                     and the push path has never been exercised. Dry-run first.'
 	@echo '  sync-pack-de       copy the German outputs into @luraty/pack-de in lughaty'
 	@echo ''
 	@echo '  provenance-update  re-record checksums after a DELIBERATE rebuild. Diff first.'
@@ -184,6 +187,14 @@ $(QUR_WORDS): $(WIKIDATA_AR)
 publish-de: check verify
 	@python3 builders/check_sources.py --publish de/out/frequency.txt
 	@uv run hf/publish.py --language de
+
+publish-ar: check verify
+	@python3 builders/check_sources.py --publish ar/out/frequency.txt
+	@uv run hf/publish.py --language ar
+
+publish-quran: check verify
+	@python3 builders/check_sources.py --publish ar-x-quran/out/frequency.txt
+	@uv run hf/publish.py --language ar-x-quran
 
 # ── the seam with lughaty ─────────────────────────────────────────────────────────────────────
 # One direction only: this repo generates, the pack vendors. @luraty/pack-de cannot live here yet
