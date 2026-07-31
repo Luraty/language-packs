@@ -29,10 +29,17 @@ ROOT = Path(__file__).resolve().parent.parent
 LEMMAS = ROOT / "languages" / "de" / "out" / "lemmas.tsv"
 FREQUENCY = ROOT / "languages" / "de" / "out" / "frequency.txt"
 
+# Which Leipzig corpora feed each language. Arabic deliberately excludes ara_wikipedia_2021_1M
+# (CC BY-SA upstream), so the attestation test must not look for entries in a corpus the build
+# never read — that would fail for a reason that has nothing to do with the lemmatizer.
+LANGUAGES = {"de": ["deu_news_2024_300K", "deu-de_web_2021_300K"],
+             "ar": ["ara_news_2020_1M", "ara_news_2022_1M"]}
 
-def table() -> dict[str, str]:
+
+def table(language: str = "de") -> dict[str, str]:
     rows = {}
-    for line in LEMMAS.read_text("utf-8").split("\n"):
+    path = ROOT / "languages" / language / "out" / "lemmas.tsv"
+    for line in path.read_text("utf-8").split("\n"):
         parts = line.split("\t")
         if len(parts) >= 2 and parts[0] and parts[1]:
             rows[parts[0]] = parts[1]
@@ -70,30 +77,75 @@ class KnownSilentErrors(unittest.TestCase):
                 self.assertEqual(rows.get(form), lemma)
 
 
+class ArabicSilentErrors(unittest.TestCase):
+    """Arabic reproduced the class in its own way, and worse — the FIRST Arabic build had a wrong
+    top ten. `في` (in, 1,619,683×) was filed under `وفى` (to fulfil, 511×) and `من` (from) under the
+    given name `منية` (28×), because the frequency tiebreak only ever compared candidates against
+    each other, never against the form. Same shape as `heute→heuen` in German; only the scale
+    differed, at 40,492× rather than 4,848×."""
+
+    FUNCTION_WORDS = ["في", "من", "على", "أن", "إلى", "عن", "مع", "هذا", "كان", "التي"]
+
+    def test_the_commonest_function_words_are_their_own_lemma(self):
+        rows = table("ar")
+        for word in self.FUNCTION_WORDS:
+            with self.subTest(word=word):
+                self.assertIsNone(
+                    rows.get(word),
+                    f"{word} is one of the commonest words in Arabic and was filed under "
+                    f"{rows.get(word)!r} — a rare lexeme whose paradigm happens to contain it",
+                )
+
+    def test_the_frequency_list_starts_with_function_words(self):
+        # The cheapest possible smoke test, and the one that caught the wrong top ten by eye.
+        entries = [w for w in (ROOT / "languages" / "ar" / "out" / "frequency.txt")
+                   .read_text("utf-8").split("\n") if w]
+        self.assertEqual(entries[:5], ["في", "من", "على", "أن", "إلى"])
+
+    def test_real_inflections_still_map(self):
+        # The guards must not be so strict that nothing merges. These are genuine Arabic
+        # inflections, and the definite article is a proclitic that has to be joined.
+        rows = table("ar")
+        for form, lemma in [("يقول", "قول"), ("يكتب", "كتب"),
+                            ("الكتاب", "كتاب"), ("الحكومة", "حكومة")]:
+            with self.subTest(form=form):
+                self.assertEqual(rows.get(form), lemma)
+
+
 class TableShape(unittest.TestCase):
     def test_no_unresolved_chains(self):
         # build-frequency does ONE lookup, so `a → b → c` files `a` under `b` while `b` files under
         # `c`, and both survive into the list as separate entries.
-        rows = table()
-        chains = [(f, t, rows[t]) for f, t in rows.items() if t in rows]
-        self.assertEqual(chains, [], f"{len(chains)} unresolved chain(s), e.g. {chains[:3]}")
+        for language in LANGUAGES:
+            with self.subTest(language=language):
+                rows = table(language)
+                chains = [(f, t, rows[t]) for f, t in rows.items() if t in rows]
+                self.assertEqual(chains, [], f"{len(chains)} unresolved chain(s), e.g. {chains[:3]}")
 
     def test_every_frequency_entry_is_attested_in_the_corpora(self):
         # The licence argument for CC BY rests on this: every string in the published list occurs
         # in CC BY Leipzig text, so none of it is carried in from a lexicon. It is also a quality
-        # check — the 85 strings this removed were 1990s spellings and lemmatizer artefacts.
-        corpora = sorted((ROOT / "data" / "leipzig").glob("*/*-words.txt"))
-        if not corpora:
-            self.skipTest("corpora not downloaded; run `make corpora-de`")
-        attested = set()
-        for path in corpora:
-            for line in path.read_text("utf-8", errors="replace").split("\n"):
-                parts = line.split("\t")
-                if len(parts) >= 3 and parts[1]:
-                    attested.add(parts[1].lower())
-        entries = [w for w in FREQUENCY.read_text("utf-8").split("\n") if w]
-        missing = [w for w in entries if w not in attested]
-        self.assertEqual(missing, [], f"{len(missing)} unattested: {missing[:10]}")
+        # check — the 85 strings this removed from German were 1990s spellings and artefacts.
+        import re
+
+        marks = re.compile("[\u064B-\u0652\u0670\u0640]")
+        for language, corpus_names in LANGUAGES.items():
+            with self.subTest(language=language):
+                corpora = [p for name in corpus_names
+                           for p in (ROOT / "data" / "leipzig" / name).glob("*-words.txt")]
+                if not corpora:
+                    self.skipTest(f"corpora not downloaded; run `make corpora-{language}`")
+                normalize = (lambda w: marks.sub("", w)) if language == "ar" else str.lower
+                attested = set()
+                for path in corpora:
+                    for line in path.read_text("utf-8", errors="replace").split("\n"):
+                        parts = line.split("\t")
+                        if len(parts) >= 3 and parts[1]:
+                            attested.add(normalize(parts[1]))
+                entries = [w for w in (ROOT / "languages" / language / "out" / "frequency.txt")
+                           .read_text("utf-8").split("\n") if w]
+                missing = [w for w in entries if w not in attested]
+                self.assertEqual(missing, [], f"{len(missing)} unattested: {missing[:10]}")
 
 
 if __name__ == "__main__":

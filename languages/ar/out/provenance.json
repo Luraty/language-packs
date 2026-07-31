@@ -1,0 +1,33 @@
+{
+  "language": "ar",
+  "generatedOn": "2026-07-30",
+  "recordedOn": "2026-07-30",
+  "⚠️": "First Arabic build in this repo. NOT a regeneration of the archived ar_lemma_zipf.csv from lughaty — that used CAMeL Tools, whose MSA morphology databases are GPL v2, and its vocalized column was database content rather than computation over the corpus. These files share no code and no lexicon with it and are not comparable.",
+  "files": {
+    "frequency.txt": {
+      "sha256": "edca4a5bce5e1e337813227741fad05df07ca66ddd9bcd6c0ca022366bdbb39c",
+      "rows": 10000,
+      "bytes": 114580
+    },
+    "lemmas.tsv": {
+      "sha256": "3da502878072acad820cf06d29a3ceeae60562d99730ae3a0078a78f503dd365",
+      "rows": 86910,
+      "bytes": 1854397
+    }
+  },
+  "method": {
+    "frequency": "One pass. Counts from two Leipzig Arabic newswire corpora, summed onto lemmas, top 10,000. Keys not attested in the corpora as real surface forms are dropped. ara_wikipedia_2021_1M is excluded on purpose — CC BY-SA upstream.",
+    "lemmatizer": "Wikidata Lexemes (CC0), Arabic Q13955, dump of 2026-07-29: 53,770 lexemes. Harakat, superscript alef and tatweel are stripped on BOTH sides so the diacritized lexicon joins the undiacritized corpus. The definite article ال is joined to its noun where the bare noun is already known (5,696 forms) — it is a proclitic, not a separate token, and it sits on 23.9% of Arabic tokens.",
+    "guards": "Same three as German plus one found here: a RARITY guard. Wikidata lists obscure lexemes whose paradigms contain very common strings, and a frequency tiebreak that only compares candidates against each other walks straight in — في (1,619,683×) was filed under وفى (511×), من (1,133,781×) under the given name منية (28×). A form is no longer mapped onto a lemma more than 200× rarer than itself. The threshold sits in a measured order-of-magnitude gap: correct German mappings top out at 58.7×, wrong ones start at 934×. It caught German errors too — heute→heuen, kosten→kosen."
+  },
+  "measured": {
+    "lemmaTable": {
+      "rows": 86910,
+      "tokenCoverage": 0.297,
+      "note": "Share of Leipzig Arabic tokens whose surface form the table can map."
+    },
+    "coverage": {
+      "note": "⚠️ NOT MEASURED. No held-out Arabic evaluation has been run. Do not cite a coverage figure for Arabic until one is."
+    }
+  }
+}

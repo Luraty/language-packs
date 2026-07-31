@@ -41,20 +41,36 @@ https://dumps.wikimedia.org/wikidatawiki/entities/latest-lexemes.json.gz
 
 from __future__ import annotations
 
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
+# ⚠️ SCRIPT NORMALIZATION. Wikidata's Arabic forms are fully diacritized (`كَتَبَ`); Leipzig's Arabic
+# text is not (`كتب`). Compared raw, NOTHING matches — the table would be 100% correct and 0% useful.
+# Stripping harakat, superscript alef and tatweel is what makes the two joinable, and it is also what
+# `build-frequency.mjs --script arabic` does to the corpus side, so the keys agree on both halves.
+#
+# The diacritics are not discarded from the world, only from the KEY: they are what a learner needs
+# in order to pronounce an Arabic word that is written ambiguously, and Wikidata gives them under CC0
+# where CAMeL's GPL-v2 database was the only other full-coverage source. Keeping a vocalized column
+# is a live option; it just must not be the join key.
+ARABIC_MARKS = re.compile("[\u064B-\u0652\u0670\u0640]")
+SCRIPTS = {
+    "latin": lambda w: w.lower(),
+    "arabic": lambda w: ARABIC_MARKS.sub("", w),
+}
 
-def leipzig_counts(paths: list[Path]) -> dict[str, int]:
-    """Leipzig `*-words.txt` is `rank <TAB> word <TAB> count`. Lowercased, matching the ranker."""
+
+def leipzig_counts(paths: list[Path], normalize) -> dict[str, int]:
+    """Leipzig `*-words.txt` is `rank <TAB> word <TAB> count`. Normalized to match the ranker."""
     counts: dict[str, int] = defaultdict(int)
     for path in paths:
         for line in path.read_text("utf-8", errors="replace").split("\n"):
             parts = line.split("\t")
             if len(parts) >= 3 and parts[1]:
                 try:
-                    counts[parts[1].lower()] += int(parts[2])
+                    counts[normalize(parts[1])] += int(parts[2])
                 except ValueError:
                     continue
     return counts
@@ -94,7 +110,14 @@ def main(argv: list[str]) -> int:
         return 2
     out = Path(argv[argv.index("--out") + 1])
     report = "--report" in argv
+    script = argv[argv.index("--script") + 1] if "--script" in argv else "latin"
+    if script not in SCRIPTS:
+        print(f"unknown --script {script}; expected one of {', '.join(SCRIPTS)}", file=sys.stderr)
+        return 2
+    normalize = SCRIPTS[script]
     value_at = {argv.index("--out") + 1}
+    if "--script" in argv:
+        value_at.add(argv.index("--script") + 1)
     if "--irregulars" in argv:
         value_at.add(argv.index("--irregulars") + 1)
     positional = [a for i, a in enumerate(argv) if not a.startswith("--") and i not in value_at]
@@ -113,7 +136,7 @@ def main(argv: list[str]) -> int:
     for line in wikidata_file.read_text("utf-8").split("\n"):
         parts = line.split("\t")
         if len(parts) >= 3 and parts[0] and parts[1]:
-            form, lemma, category = parts[0].lower(), parts[1].lower(), parts[2]
+            form, lemma, category = normalize(parts[0]), normalize(parts[1]), parts[2]
             # ⚠️ AFFIX LEXEMES. Wikidata models bound morphemes as lexemes too — `-in` is the
             # feminine suffix, `-chen` the diminutive. They are written with a hyphen, and they
             # are NOT words a frequency list may contain. Left in, they are quietly destructive:
@@ -128,7 +151,7 @@ def main(argv: list[str]) -> int:
             if form != lemma:
                 candidates[form].add((lemma, category))
 
-    counts = leipzig_counts(corpora)
+    counts = leipzig_counts(corpora, normalize)
 
     rows: list[tuple[str, str]] = []
     ambiguous: list[tuple[str, str, list[str]]] = []
@@ -165,6 +188,33 @@ def main(argv: list[str]) -> int:
                 blocked.append((form, [lem for lem, _ in options]))
                 continue
             options = kept
+
+        # ⚠️ RARITY GUARD — the one that catches what the POS guard cannot.
+        #
+        # A word cannot be an inflection of something drastically rarer than itself. Wikidata lists
+        # obscure lexemes whose paradigms happen to contain very common strings, and the frequency
+        # tiebreak walks straight into them because it only compares CANDIDATES against each other,
+        # never against the form. Both languages were wrong before this guard:
+        #
+        #     في    (1,619,683×) → وفى    (511×)     3,170×    "in" filed under "to fulfil"
+        #     من    (1,133,781×) → منية   (28×)     40,492×    "from" filed under a given name
+        #     heute (   184,124×) → heuen  (38×)      4,848×    "today" filed under "to make hay"
+        #     kosten (   68,024×) → kosen  (30×)      2,267×    "to cost" filed under "to caress"
+        #
+        # The threshold is empirical, and the gap it sits in is wide enough to be trustworthy.
+        # Measured on German: every known-correct mapping is at most 58.7× (`eigenen→eigen`, high
+        # because `eigen` is almost always declined), while every wrong one starts at 934×. Most
+        # correct mappings are under 6×. 200× is the middle of an order-of-magnitude gap, not a
+        # tuned constant — if a future language puts real mappings above it, the gap is the thing to
+        # re-measure, not the number to nudge.
+        RARITY_LIMIT = 200
+        options = [
+            (lem, cat) for lem, cat in options
+            if counts.get(form, 0) <= RARITY_LIMIT * max(1, counts.get(lem, 0))
+        ]
+        if not options:
+            blocked.append((form, ["all candidates far rarer than the form itself"]))
+            continue
 
         lemmas = sorted({lem for lem, _ in options})
         if len(lemmas) == 1:
@@ -216,7 +266,10 @@ def main(argv: list[str]) -> int:
     # the declined form ranks as its own word and the base never accumulates its mass: exactly the
     # split-across-inflections failure the README describes. A declined participle belongs wherever
     # its base belongs, so it inherits the base's target rather than pointing at the base.
-    ADJECTIVE_ENDINGS = ("e", "en", "em", "er", "es")
+    # ⚠️ GERMAN MORPHOLOGY ONLY. Arabic is non-concatenative — a plural is `كتاب`→`كتب`, an internal
+    # vowel change with no suffix to bolt on, so appending endings would invent words rather than
+    # find them. Empty tuple = the whole block becomes a no-op for `--script arabic`.
+    ADJECTIVE_ENDINGS = ("e", "en", "em", "er", "es") if script == "latin" else ()
     all_lemmas = set(own_categories)
     bases: dict[str, str] = {lem: lem for lem, cats in own_categories.items() if ADJECTIVE in cats}
     bases.update(dict(mapping))  # snapshot: never expand a row this loop just added
@@ -227,6 +280,22 @@ def main(argv: list[str]) -> int:
             if form in counts and form not in mapping and form not in all_lemmas:
                 mapping[form] = target
                 generated += 1
+
+    # ⚠️ ARABIC DEFINITE ARTICLE. `ال` is a proclitic, not a separate token: Leipzig writes
+    # `الكتاب` as one word, so it never matches the bare lemma `كتاب` and the two rank separately.
+    # 23.9% of Arabic tokens carry it. Stripping it where the remainder is ALREADY a known form or
+    # lemma recovers 5,407 forms and 3.9% of token mass — and the "already known" condition is what
+    # keeps it safe, since it never invents a word, it only joins two strings the lexicon already
+    # contains. Not applied to Latin script, which has no such clitic.
+    clitics_joined = 0
+    if script == "arabic":
+        known = set(mapping) | set(mapping.values()) | set(own_categories)
+        for form in counts:
+            if form.startswith("ال") and len(form) > 3 and form not in mapping:
+                stem = form[2:]
+                if stem in known and stem != form:
+                    mapping[form] = mapping.get(stem, stem)
+                    clitics_joined += 1
 
     # Hand-written overrides win. `irregulars.tsv` is this project's own work (MIT, verified by
     # authorship), it predates the Wikidata swap, and it encodes decisions somebody made
@@ -240,7 +309,7 @@ def main(argv: list[str]) -> int:
             for line in irregulars.read_text("utf-8").split("\n"):
                 parts = line.split("\t")
                 if len(parts) >= 2 and parts[0] and parts[1] and not parts[0].startswith("#"):
-                    form, lemma = parts[0].strip().lower(), parts[1].strip().lower()
+                    form, lemma = normalize(parts[0].strip()), normalize(parts[1].strip())
                     if form != lemma and form in counts:
                         mapping[form] = lemma
                         overrides += 1
@@ -252,10 +321,22 @@ def main(argv: list[str]) -> int:
         c, y = resolve(mapping, counts)
         chains_flattened += c
         cycles_broken += y
+    # ⚠️ FINAL RARITY SWEEP. The guard above filters CANDIDATES, but three later steps add rows it
+    # never saw: generated adjective forms, hand-written overrides, and chain resolution — which can
+    # re-point a form at a much rarer target than the one it was originally checked against. That is
+    # how `fast → fasen` survived (2,810 occurrences filed under a lemma with ZERO). Re-checking the
+    # finished mapping is the only place that catches all three.
+    swept = [f for f, l in mapping.items()
+             if counts.get(f, 0) > RARITY_LIMIT * max(1, counts.get(l, 0))]
+    for form in swept:
+        del mapping[form]
+
     rows = sorted(mapping.items())
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(f"{f}\t{l}\n" for f, l in rows), encoding="utf-8")
+    print(f"  clitic forms joined (ar):             {clitics_joined}")
+    print(f"  swept by the final rarity check:      {len(swept)}")
     print(f"  adjective forms generated:            {generated}")
     print(f"  hand-written overrides applied:       {overrides}")
     print(f"  chains flattened:                     {chains_flattened}")

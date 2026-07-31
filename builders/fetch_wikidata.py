@@ -51,11 +51,11 @@ with urllib.request.urlopen(req) as resp, gzip.open(resp, "rt", encoding="utf-8"
                 if rep.get("value"):
                     pairs.add((rep["value"], lemma, e.get("lexicalCategory") or ""))
         if lexemes % 25000 == 0:
-            print(f"  {lexemes} de lexemes / {seen} scanned / {len(pairs)} pairs", flush=True)
+            print(f"  {lexemes} {LANGUAGE} lexemes / {seen} scanned / {len(pairs)} pairs", flush=True)
 
 Path(OUT).parent.mkdir(parents=True, exist_ok=True)
 with open(OUT, "w", encoding="utf-8") as out:
     for f, l, c in sorted(pairs):
         out.write(f"{f}\t{l}\t{c}\n")
-print(f"DONE  entities scanned {seen}  german lexemes {lexemes}  pairs {len(pairs)}")
+print(f"DONE  entities scanned {seen}  {LANGUAGE} lexemes {lexemes}  pairs {len(pairs)}")
 print("top categories:", sorted(cats.items(), key=lambda kv: -kv[1])[:6])

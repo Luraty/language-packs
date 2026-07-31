@@ -14,8 +14,8 @@ Two audiences, and the split is deliberate:
 
 | Language | Frequency list | Lemma table | Pipeline |
 | --- | --- | --- | --- |
-| German (`de`) | ✅ 10,000 lemmas | ✅ 83,401 inflections | ✅ reproducible |
-| Arabic (`ar`) | ❌ | ❌ | ❌ corpora only — see below |
+| German (`de`) | ✅ 10,000 lemmas | ✅ 83,361 inflections | ✅ reproducible |
+| Arabic (`ar`) | ✅ 10,000 MSA lemmas | ✅ 86,910 inflections | ✅ reproducible |
 
 ## The pipeline
 
@@ -63,11 +63,12 @@ owed, and it expressly waives the EU database right that every share-alike alter
 That replaced the UD treebanks, which were CC BY-SA and quietly made the frequency list share-alike
 too; see `languages/de/sources.json`.
 
-Swapping the lemmatizer reproduced this project's worst bug class **three times in an hour** —
-`warten→warte`, `stärke→stärken`, and `in→-in`, the last of which deleted a top-20 German word by
-filing the preposition under the feminine *suffix*. All three are now pinned as tests in
-`builders/test_lemmas.py`. If you change the lemmatizer again, expect the same, and do not rely on
-diffing the output to catch it.
+Swapping the lemmatizer reproduced this project's worst bug class **four times** — `warten→warte`,
+`stärke→stärken`, `in→-in` (which deleted a top-20 German word by filing the preposition under the
+feminine *suffix*), and `heute→heuen`, "today" filed under "to make hay". The last one was only found
+while building Arabic, where the same flaw put `في` under `وفى` and produced a visibly wrong top ten.
+All are pinned as tests in `builders/test_lemmas.py`. If you change the lemmatizer again, expect the
+same, and do not rely on diffing the output to catch it.
 
 ## Licensing is a gate, not a paragraph
 
@@ -89,7 +90,7 @@ CC BY-SA lemma table, and the check could not fire because `derivedFrom` did not
 only sees what it is told** — which is why there is now a separate test asserting the declaration
 matches what the build actually reads.
 
-> **The gate is open as of 2026-07-30.** All five German sources are stamped. Leipzig's terms were
+> **The gate is open as of 2026-07-30.** Every German and Arabic source is stamped. Leipzig's terms were
 > read from their own page via the Wayback Machine (the live site is bot-gated and the tarballs ship
 > no licence file): CC BY-NC governs their **query portal**, while "All corpora provided for download
 > are licensed under CC BY" — the distinction the earlier CC BY-NC scare got wrong. One inconsistency
@@ -129,32 +130,30 @@ bundle against the engine to measure a pack, so they cannot run here.
 
 ## Arabic
 
-**The pipeline is not gone.** The 2026-07-27 reset archived the whole tree as a branch and a tag, so
-a complete, tested, already-Python, already-language-agnostic pipeline survives — along with the
-finished output: 77,400 MSA lemmas with vocalization, POS and Zipf scores, generated 2026-07-14.
+Built 2026-07-30, MSA newswire, **CC BY 4.0** — same shape as German and the same CC0 lemma source.
 
 ```bash
-git -C ../lughaty show archive/pre-reset-2026-07-27:tools/content/zipf/freqpipe/pipeline.py
+make corpora-ar && make ar
 ```
 
-The corpora (3.2 GB) and the 15 MB lemma cache are still on disk there too. Arabic is a **recovery**
-job, not a rewrite.
+**What made it hard was licensing, not linguistics.** Every full-coverage MSA morphological analyser
+is blocked: CAMeL's MSA databases are GPL v2, UD Arabic-PADT is CC BY-NC-SA, NYUAD ships no word
+forms and needs the Penn Arabic Treebank from the LDC ($13,500, research-only, redistribution
+forbidden at any price), Farasa is research-only, Alkhalil is NC, Qabas is ND. Wikidata Lexemes (CC0)
+is the only clean link in the chain — and its Arabic forms are fully diacritized, which recovers the
+vocalization the GPL database was otherwise the only source of.
 
-⚠️ **What actually blocks it is the lemmatizer's licence.** That pipeline uses CAMeL Tools — MIT, but
-its `morphology-db-msa-r13` and `disambig-mle-calima-msa-r13` databases are **GPL v2**, and the
-output's vocalized column is database *content*: Leipzig's Arabic is undiacritized, so every diacritic
-was copied out of that lexicon.
+The archived pipeline in lughaty (`archive/pre-reset-2026-07-27`) is **not** what produced these
+files, and its licence note is why: it recorded "CAMeL Tools (MIT)" and said nothing about the
+GPL-v2 *databases* underneath.
 
-There is no permissive full-coverage MSA alternative. Every Arabic UD treebank is non-commercial or
-needs the Penn Arabic Treebank from the LDC ($13,500, research-only, redistribution still forbidden);
-Farasa is research-only, Alkhalil is NC, Qabas is no-derivatives. The free full-coverage option
-(BAMA, 38,600 lemmas) is GPL v2 — which is *why* CAMeL is GPL, since it descends from it.
+Three things change for Arabic and each was a bug before it was a flag: diacritics are stripped on
+both sides so the diacritized lexicon joins the undiacritized corpus; the definite article `ال` is
+joined to its noun (a proclitic on **23.9%** of tokens); and suffix generation is off, because Arabic
+plurals are internal vowel changes with nothing to append.
 
-The likely route is the same one German took: **Wikidata Lexemes (CC0)** has 53,762 Arabic lexemes,
-~600–710k form→lemma pairs, and — usefully — every form fully diacritized, which is the exact thing
-the GPL database was holding hostage.
+⚠️ **MSA only.** Inherited dialect is a separate system and is not measured here. That needs a
+dialect *corpus*, not a flag — Leipzig's Arabic is all newswire MSA.
 
-Arabic also needs a decision German never faced: inherited dialect and written MSA are related but
-different systems, so "Arabic frequency" is at least two lists, measured separately. The archived
-77,400-lemma output is MSA only. Note the asymmetry that cuts across it — CAMeL's **dialect**
-databases (Gulf, Levantine) are CC BY 4.0; only the MSA one is GPL.
+⚠️ `ara_wikipedia_2021_1M` is downloaded and deliberately unused: CC BY-SA upstream. Dropping one
+corpus is cheaper than defending the argument that a count table doesn't inherit it.

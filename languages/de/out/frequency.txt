@@ -48,6 +48,7 @@ viel
 neu
 bis
 mehr
+weit
 gut
 wenn
 man
@@ -64,7 +65,6 @@ finden
 gehen
 wolle
 dann
-weit
 gegen
 sagen
 erste
@@ -129,21 +129,20 @@ ob
 nehmen
 denn
 stadt
-weitern
-währen
 tag
 wer
 gemeinsam
 klein
 lang
 angebot
-gelen
+gelten
 frau
 datum
 alt
 etwa
 dafür
 dort
+während
 wissen
 mögen
 information
@@ -155,7 +154,7 @@ mal
 sondern
 ende
 bereich
-heuen
+heute
 welche
 fall
 unterstützen
@@ -213,7 +212,7 @@ vier
 beiden
 zahl
 einmal
-tunen
+tun
 entwicklung
 entsprechend
 darüber
@@ -257,6 +256,7 @@ deshalb
 dein
 verfügung
 laufen
+kosten
 tragen
 ebenfalls
 gewinnen
@@ -267,7 +267,7 @@ klar
 fördern
 berlin
 bild
-europäisch
+fast
 fünf
 aufgabe
 schreiben
@@ -284,6 +284,7 @@ ergebnis
 mitarbeiter
 jugendliche
 link
+ziehen
 informieren
 region
 erfolgreich
@@ -292,9 +293,9 @@ veranstaltung
 angabe
 schließen
 innen
-hau
 ja
 zurück
+haus
 mehrere
 insbesondere
 zukunft
@@ -302,7 +303,7 @@ stunde
 aufgrund
 zahlreich
 je
-elter
+eltern
 art
 einzeln
 ermöglichen
@@ -400,14 +401,13 @@ wahl
 aktiv
 durchführen
 preis
-jeweilig
 gehören
-garen
 einrichtung
 erklärt
 jeweils
 trotz
 chance
+gar
 schritt
 märz
 gast
@@ -448,6 +448,7 @@ jede
 legen
 russisch
 usa
+europäischen
 tagen
 bildung
 video
@@ -464,7 +465,6 @@ gleichzeitig
 förderung
 hinter
 online
-ehemalig
 august
 zuvor
 kontakt
@@ -495,6 +495,7 @@ klasse
 präsident
 dadurch
 wasser
+jeweiligen
 ändern
 fc
 nutzer
@@ -585,6 +586,7 @@ sofort
 bedeutung
 gruppe
 speziell
+schaffen
 freund
 sport
 einzig
@@ -699,7 +701,7 @@ regional
 komplett
 meist
 schutz
-besondern
+besondere
 verhindern
 material
 verfügen
@@ -773,6 +775,7 @@ eingesetzt
 beruf
 vorteil
 sprache
+europäisch
 mehreren
 qualität
 vollständig
@@ -853,7 +856,6 @@ studie
 interview
 betragen
 schauen
-bisherig
 schweiz
 drohen
 erhöhen
@@ -1075,7 +1077,6 @@ kontrolle
 erkrankung
 generation
 gefühl
-israelisch
 fläche
 aktivität
 lehrer
@@ -1139,7 +1140,6 @@ smartphone
 vermeiden
 extrem
 genießen
-heutig
 verhalten
 verletzung
 anmelden
@@ -1147,6 +1147,7 @@ heraus
 klinik
 auftritt
 krankheit
+ehemaligen
 new
 beantragen
 branche
@@ -1167,6 +1168,7 @@ zwölf
 feststellen
 sparen
 haushalt
+ehemalige
 fach
 niedrig
 peter
@@ -1205,6 +1207,7 @@ sodass
 vertrauen
 schuljahr
 software
+beziehen
 künstler
 sicherstellen
 ebene
@@ -1287,6 +1290,7 @@ abgeben
 kontrollieren
 licht
 dokument
+garten
 her
 vorschlag
 deutsch
@@ -1321,8 +1325,8 @@ wesen
 töten
 glück
 akteur
-lehr
 jugend
+lehre
 ersetzen
 nachfrage
 verraten
@@ -1378,6 +1382,7 @@ scheitern
 umfeld
 umgebung
 ansatz
+bremen
 einstellung
 leitung
 stefan
@@ -1388,6 +1393,7 @@ flughafen
 mittelpunkt
 kategorie
 beitragen
+bisherigen
 mitteilte
 nötig
 räumen
@@ -1447,7 +1453,6 @@ handel
 nahe
 rat
 vorlegen
-britisch
 reden
 star
 verständnis
@@ -1526,7 +1531,6 @@ langsam
 empfehlung
 konflikt
 zentral
-österreichisch
 innenstadt
 innovation
 unklar
@@ -1609,6 +1613,7 @@ liga
 nein
 örtlich
 belastung
+heutigen
 italien
 urlaub
 wechsel
@@ -1731,7 +1736,6 @@ erfordern
 ressource
 variante
 rein
-sonstig
 stadtteil
 tisch
 club
@@ -1812,6 +1816,7 @@ effektiv
 senken
 einheit
 krank
+willkommen
 auszeichnung
 einschließlich
 thüringen
@@ -1862,12 +1867,10 @@ strategisch
 botschaft
 gewiss
 bestellung
-diesjährig
 weiterentwickeln
 angeblich
 ausbilden
 brücke
-damalig
 landwirt
 vorne
 klage
@@ -1894,7 +1897,6 @@ beliebt
 beschwerde
 konto
 nachfolgen
-timen
 trainieren
 zweifel
 atmosphäre
@@ -2085,6 +2087,7 @@ senior
 vorerst
 wolfgang
 begeistern
+bisherig
 ehe
 stehend
 autobahn
@@ -2092,6 +2095,7 @@ könig
 toter
 befragte
 interaktiv
+israelische
 park
 unterliegen
 gewinn
@@ -2102,6 +2106,7 @@ gold
 kollegin
 quadratmeter
 vereinbarung
+währen
 akademie
 angenommen
 entfernen
@@ -2175,6 +2180,7 @@ außergewöhnlich
 bundeskanzler
 erbringen
 höchste
+israelischen
 rente
 einhaltung
 sebastian
@@ -2237,6 +2243,7 @@ kiel
 raus
 vorab
 weitergeben
+youtube
 berechtigt
 fort
 gegensatz
@@ -2328,6 +2335,7 @@ berufen
 dienstleister
 flucht
 fortschritt
+jeweilig
 rang
 bezahlt
 chemnitz
@@ -2508,6 +2516,7 @@ unglaublich
 anwohner
 baby
 bord
+diesjährigen
 einstellen
 geschickt
 meistens
@@ -2586,6 +2595,7 @@ solange
 teilnehmerin
 zinsen
 zuordnen
+österreichischen
 befürchten
 bewahren
 festen
@@ -2698,6 +2708,7 @@ kapitel
 motivieren
 auftakt
 begründen
+britischen
 hans
 hauptsächlich
 herkunft
@@ -2790,6 +2801,7 @@ glas
 griff
 jude
 militär
+britische
 bündeln
 christlich
 draußen
@@ -2866,6 +2878,7 @@ hürde
 lache
 rad
 reisende
+tim
 vogel
 wintersemester
 agieren
@@ -2875,6 +2888,7 @@ manager
 pressekonferenz
 schmidt
 senat
+sonstig
 tabelle
 belangen
 bergen
@@ -2886,6 +2900,7 @@ bar
 beruhen
 bestreiten
 blicken
+damaligen
 etabliert
 eventuell
 jüngste
@@ -3125,6 +3140,7 @@ anleitung
 beratungsstelle
 haar
 handlung
+heutig
 laufzeit
 menschenrecht
 prozentpunkt
@@ -3161,6 +3177,7 @@ ohr
 operativ
 reinigen
 schulleitung
+sonstige
 archiv
 aufgehoben
 beauftragte
@@ -3304,6 +3321,7 @@ steuerlich
 unmöglich
 unsicher
 unterzeichnen
+österreichische
 caritas
 demenz
 dresdner
@@ -3375,6 +3393,7 @@ decken
 einlegen
 endgerät
 fahrgast
+niedersächsischen
 performance
 presse
 tschechien
@@ -3625,6 +3644,7 @@ amerika
 arena
 besitz
 diskriminierung
+ehemalig
 eintreten
 erschließen
 maus
@@ -3701,6 +3721,7 @@ bern
 bescheinigung
 bmw
 bne
+damalig
 distanz
 einreise
 gebürtig
@@ -4672,6 +4693,7 @@ abschließen
 aufzeichnung
 bildungseinrichtung
 blinde
+diesjährig
 eineinhalb
 fernseher
 gerechtigkeit
@@ -4877,6 +4899,7 @@ putins
 relevanz
 schaffung
 schulalltag
+times
 unzulässig
 vielversprechend
 zufall
@@ -9094,6 +9117,7 @@ innenministerin
 insolvenzverfahren
 intim
 iris
+israelisch
 java
 kamerad
 kanzlerin
@@ -9974,27 +9998,3 @@ bundesrates
 bundeswettbewerb
 bürgerinitiative
 capital
-chirurgie
-christi
-coup
-daimler
-defensiv
-distanzieren
-djokovic
-eindämmen
-einsteiger
-elias
-epa
-erfahrungsgemäß
-erkennung
-erklärvideo
-ertragen
-etat
-etf
-evakuierung
-exekutive
-fachpersonal
-fachschaft
-fachtag
-fashion
-faszinierende
