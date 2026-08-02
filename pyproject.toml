@@ -1,9 +1,13 @@
 [project]
 name = "luraty-language-packs"
 version = "0.1.0"
-description = "Add your description here"
+description = "Word frequency lists and lemma tables built from public corpora, with the code that builds them"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "datasets>=5.0.1",
+    # ⚠️ Declared even though `datasets` already pulls it in. hf/publish.py imports HfApi directly,
+    # and an undeclared transitive import is a dependency that vanishes the day the package which
+    # happened to supply it changes its own requirements.
+    "huggingface-hub>=0.34",
 ]

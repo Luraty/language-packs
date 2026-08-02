@@ -1,0 +1,33 @@
+{
+  "language": "xx",
+  "name": "Non-commercial fixture — a CC BY output derived from a CC BY-NC source",
+  "note": "Not hypothetical. UD_Arabic-PADT is CC BY-NC-SA 3.0 and UD_German-LIT is CC BY-NC-SA 4.0, and the gate's original dash-splitting licence test saw neither term.",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["permissive", "non-commercial"],
+      "licence": "CC-BY-4.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "permissive",
+      "name": "A permissive source",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "subtitles",
+      "snapshotYear": 2018
+    },
+    {
+      "id": "non-commercial",
+      "name": "A non-commercial source that must contaminate the output",
+      "licence": "CC-BY-NC-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "annotation"
+    }
+  ]
+}

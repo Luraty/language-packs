@@ -12,13 +12,15 @@ DE_TREEBANKS := data/ud/UD_German-GSD/*.conllu data/ud/UD_German-HDT/*.conllu
 LUGHATY      := ../lughaty
 
 .DEFAULT_GOAL := help
-.PHONY: help check test verify provenance-update corpora-de de publish-de sync-pack-de
+.PHONY: help check catalog candidates test verify provenance-update corpora-de de publish-de sync-pack-de
 
 help:
 	@echo ''
 	@echo '  Luraty language packs'
 	@echo ''
 	@echo '  check              licence + consistency gate over languages/*/sources.json'
+	@echo '  catalog            cross-check languages/*/sources.json against catalog/corpora.json'
+	@echo '  candidates L=de    what could fill this language'"'"'s register gaps, and at what licence cost'
 	@echo '  verify             every out/ file still matches its recorded checksum'
 	@echo '  test               tests for the gate itself, including the failing cases'
 	@echo ''
@@ -32,8 +34,19 @@ help:
 	@echo '  provenance-update  re-record checksums after a DELIBERATE rebuild. Diff first.'
 	@echo ''
 
+# Both halves run, and the second is not optional. The gate reads what a language CLAIMS; the
+# catalogue holds what an upstream's terms actually say. A claim nobody cross-checks is how
+# `UD_Arabic-PADT` gets recorded as CC BY-SA because that is what the sibling treebank was.
 check:
 	@node builders/check-sources.mjs
+	@node builders/check-catalog.mjs
+
+catalog:
+	@node builders/check-catalog.mjs
+
+# L defaults to de because it is the only language with a pipeline. `make candidates L=ar` works.
+candidates:
+	@node builders/check-catalog.mjs --candidates $(or $(L),de)
 
 verify:
 	@node builders/verify-provenance.mjs

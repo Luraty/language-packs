@@ -1,0 +1,23 @@
+{
+  "language": "xx",
+  "name": "NC-output fixture — the loophole that would otherwise stay open",
+  "note": "The contamination arm only fires when an NC source feeds a NON-NC output. Declaring the output NC silences it — and produces an artefact this project can never ship, because the lists are used commercially in Luraty and NC binds the licensee. Both arms together mean an NC source cannot be used at all. Without this fixture the second arm has never been seen to fire.",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["non-commercial"],
+      "licence": "CC-BY-NC-SA-3.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "non-commercial",
+      "name": "Stands in for UD_Arabic-PADT, which is genuinely CC BY-NC-SA 3.0",
+      "licence": "CC-BY-NC-SA-3.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "annotation"
+    }
+  ]
+}

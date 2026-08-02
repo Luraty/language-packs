@@ -1,0 +1,24 @@
+{
+  "language": "xx",
+  "name": "No-derivatives fixture — a source no output licence can rescue",
+  "note": "Unlike SA and NC, there is no relicensing that makes this shippable: a frequency count is an adaptation of the corpus, and ND forbids distributing adaptations. The arm must fire even though the output declares the same licence as the source.",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["no-derivatives"],
+      "licence": "CC-BY-ND-4.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "no-derivatives",
+      "name": "A no-derivatives source",
+      "licence": "CC-BY-ND-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "news",
+      "snapshotYear": 2019
+    }
+  ]
+}

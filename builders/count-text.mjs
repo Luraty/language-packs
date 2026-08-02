@@ -23,7 +23,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const args = process.argv.slice(2);
 const outIndex = args.indexOf('--out');
 const out = outIndex >= 0 ? args[outIndex + 1] : undefined;
-const inputs = args.filter((a, i) => !a.startsWith('--') && i !== outIndex + 1);
+// ⚠️ Guard the index. With `--out` absent, `indexOf` returns -1 and `-1 + 1` is 0, which excludes
+// the FIRST positional argument. Today the `out === undefined` check below happens to exit first so
+// the damage is invisible — but that makes it a trap for whoever adds an optional flag next, and
+// build-frequency.mjs already lost time to exactly this.
+const inputs = args.filter((a, i) => !a.startsWith('--') && !(outIndex >= 0 && i === outIndex + 1));
 
 if (out === undefined || inputs.length === 0) {
   console.error('usage: count-text.mjs --out <file> <path[:weight]>...');

@@ -1,0 +1,373 @@
+{
+  "$comment": [
+    "Where the next corpus comes from. Machine-readable so it can be CHECKED, not just read — see",
+    "builders/check-catalog.mjs. Every source in languages/*/sources.json names a `catalogId` here,",
+    "and the checker refuses a licence that disagrees with this file.",
+    "",
+    "⚠️ `probe` records an HTTP HEAD only. It proves the URL answers and how large the download is.",
+    "It proves NOTHING about the licence: `licenceVerified` is still false until a human reads the",
+    "terms, exactly as in languages/*/sources.json. Six entries below were verified by fetching the",
+    "upstream LICENSE file directly, and those say so in their note.",
+    "",
+    "Nothing here has been downloaded. Sizes are what the server reported.",
+    "",
+    "⚠️ The bar these are judged against: the lists are open source and free for everyone, AND used",
+    "commercially inside Luraty. So CC BY and CC BY-SA are both fine — share-alike is not a",
+    "commercial restriction — while CC BY-NC and CC BY-ND are out permanently. NC cannot be",
+    "open-sourced around: it binds the licensee, and building a derivative grants no right the",
+    "upstream never gave. See languages/de/SOURCES.md.",
+    "",
+    "Background and citations: docs/METHODOLOGY.md. What to do with these: docs/ROADMAP.md."
+  ],
+  "probedOn": "2026-07-30",
+  "entries": [
+    {
+      "id": "leipzig",
+      "name": "Leipzig Corpora Collection (Wortschatz, Universität Leipzig)",
+      "kind": "raw-corpus",
+      "languages": "270+",
+      "registers": ["news", "web", "encyclopedic", "mixed"],
+      "licence": "CC-BY-3.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://wortschatz.uni-leipzig.de/en/download",
+      "downloads": [
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_news_2024_1M.tar.gz", "bytes": 228813522, "status": 200, "note": "German news, 1M sentences — the ~3× upgrade on the 300K currently used" },
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/deu-de_web_2021_1M.tar.gz", "bytes": 198261152, "status": 200, "note": "German web, 1M sentences, pre-2022 snapshot" },
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_wikipedia_2021_1M.tar.gz", "bytes": 206734187, "status": 200, "note": "German Wikipedia, 1M sentences" },
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_mixed-typical_2011_1M.tar.gz", "bytes": 98211941, "status": 200, "note": "⚠️ Leipzig's own register-balanced mix, 2011 — pre-AI-contamination, and the closest thing Leipzig offers to a balanced corpus" },
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_news_2024_10K.tar.gz", "bytes": 2352306, "status": 200, "note": "2 MB. Cheapest way to answer 'does an archive ship a licence file?' without pulling 218 MB" },
+        { "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_news_2022_1M.tar.gz", "bytes": 381103268, "status": 200, "note": "Arabic news — already downloaded to data/ per languages/ar/sources.json" }
+      ],
+      "verdict": "Already the backbone. The upgrade is 300K → 1M sentences per corpus, which is what moves German past the 16–30M token threshold. Blocked on nothing except disk.",
+      "note": "⚠️ THE LICENCE IS STILL UNREAD, and four routes were tried on 2026-07-30: /en/usage answers with an anti-bot interstitial ('Making sure you're not a bot!'), /en/download/ carries no licence text, repo.data.saw-leipzig.de and the CLARIN VLO surfaced nothing machine-readable. A human with a browser closes this in five minutes; nothing else here does. The version is also unsettled — 3.0 for the word lists, 4.0 for the RDF datasets, and secondary sources cite 4.0 for the corpora."
+    },
+    {
+      "id": "frequencywords",
+      "name": "FrequencyWords (hermitdave) — OpenSubtitles-derived lists",
+      "kind": "frequency-list",
+      "languages": "60+",
+      "registers": ["subtitles"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://github.com/hermitdave/FrequencyWords",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/de/de_50k.txt", "bytes": 662497, "status": 200, "note": "German top 50k, `word count` per line" },
+        { "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/de/de_full.txt", "bytes": 17479451, "status": 200, "note": "German full list" },
+        { "url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ar/ar_50k.txt", "bytes": 805779, "status": 200, "note": "Arabic top 50k — heavily dialectal, which is the point for ar" }
+      ],
+      "verdict": "The cheapest possible fix for the German register gap: 650 KB, no corpus processing, already counted. Its licence is the whole question.",
+      "note": "⚠️ TWO CONFLICTING LICENCE CLAIMS AND NEITHER IS SETTLED. The repository's own LICENSE file was fetched on 2026-07-30 and is plain MIT (Copyright (c) 2016 Hermit Dave) — but that is the standard GitHub-repo licence file and most likely covers the generator code, not the derived counts. Secondary summaries state the CONTENT is CC BY-SA 4.0, which would contaminate a CC BY output. `licence` is left null here rather than guessed, because guessing it permissive is precisely the failure this catalogue exists to prevent. Read the repository README and the OPUS terms together before adopting. Author's own caveat: the lists are NOT sanitised — misspellings, foreign words and names are present, so treat them as raw material and run the cleaning stage over them."
+    },
+    {
+      "id": "opus-opensubtitles",
+      "name": "OPUS OpenSubtitles2018 — monolingual subtitle text",
+      "kind": "raw-corpus",
+      "languages": "60+",
+      "registers": ["subtitles"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://opus.nlpl.eu/OpenSubtitles-v2018.php",
+      "downloads": [
+        { "url": "https://object.pouta.csc.fi/OPUS-OpenSubtitles/v2018/mono/de.txt.gz", "bytes": 475884373, "status": 200, "note": "German, 454 MB gzipped" },
+        { "url": "https://object.pouta.csc.fi/OPUS-OpenSubtitles/v2018/mono/ar.txt.gz", "bytes": 1012859699, "status": 200, "note": "Arabic, 966 MB gzipped" }
+      ],
+      "verdict": "The raw form of the same register FrequencyWords already counted. Take it only if the counting has to be controlled — otherwise the counts are the product and this is 454 MB of avoidable work.",
+      "note": "⚠️ The corpus itself carries restricted / non-commercial distribution terms, so publishing the raw TEXT is a problem. Publishing derived COUNTS is the established practice — that is exactly what FrequencyWords does. That distinction is a legal question this catalogue cannot settle; the reason it matters is that it changes which of the two entries is safe to adopt."
+    },
+    {
+      "id": "wordfreq",
+      "name": "wordfreq (Robyn Speer / Luminoso)",
+      "kind": "library",
+      "languages": "40+",
+      "registers": ["mixed"],
+      "licence": "MIT",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://github.com/rspeer/wordfreq",
+      "downloads": [
+        { "url": "https://pypi.org/pypi/wordfreq/json", "bytes": 58738, "status": 200, "note": "Release metadata — the package itself installs from PyPI" }
+      ],
+      "verdict": "⚠️ NOT a source. Use it as a VALIDATION BASELINE only (roadmap item C): correlate this project's German ranking against wordfreq's Zipf values and read the largest discrepancies.",
+      "note": "Unmaintained by decision, not neglect. The author stopped because generative-AI text polluted the web-crawl inputs and the Twitter/Reddit APIs closed: 'I don't think anyone has reliable information about post-2021 language usage by humans.' The last release is still a fine baseline for German, and its multi-source fusion is the method worth studying. Its Zipf scale (log10 of frequency per billion words) is the scale roadmap item A should emit."
+    },
+    {
+      "id": "worldlex",
+      "name": "Worldlex — Twitter, blog and newspaper frequencies",
+      "kind": "frequency-list",
+      "languages": "66",
+      "registers": ["social", "web", "news"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "http://worldlex.lexique.org",
+      "downloads": [
+        { "url": "http://openlexicon.fr/datasets-info/WorldLex/README-Worldlex.html", "bytes": 4156, "status": 200, "note": "The readable mirror. worldlex.lexique.org itself answered 200 with a 178-byte stub on 2026-07-30 — probably a redirect shell, not the data" }
+      ],
+      "verdict": "Validation baseline for German and Arabic (both in the 66), and the published template for the cleaning stage in roadmap item E.",
+      "note": "Peer-reviewed and built with ONE uniform pipeline across all 66 languages, so cross-language comparison is controlled — rare and valuable. Validated against lexical-decision megastudies in five languages, where Twitter/blog frequencies predicted word-recognition times as well as or better than book and subtitle frequencies. 'Free for research' is not a licence id; find the actual terms before shipping anything derived from it."
+    },
+    {
+      "id": "subtlex",
+      "name": "SUBTLEX family — film/TV subtitle norms",
+      "kind": "frequency-list",
+      "languages": "US/UK English, NL, ZH, ES, DE, GR, PL, PT, PT-BR, CY",
+      "registers": ["subtitles"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "http://crr.ugent.be/programs-data/subtitle-frequencies",
+      "downloads": [],
+      "verdict": "SUBTLEX-DE is the single best validation target for the German list — it is the psycholinguistic gold standard for exactly this language and register.",
+      "note": "⚠️ THE DOWNLOAD LOCATION IS UNRESOLVED. Both http://crr.ugent.be/subtlex-de/ and http://crr.ugent.be/programs-data/subtitle-frequencies returned 404 on 2026-07-30; the Ghent hosting appears to have moved. Find the current home (the SUBTLEX-DE paper, or an OSF mirror) before planning around it. Each variant has its own peer-reviewed paper, and those papers are the blueprint even for languages the family does not cover."
+    },
+    {
+      "id": "tubelex",
+      "name": "TUBELEX — YouTube subtitle corpus and frequency lists",
+      "kind": "frequency-list",
+      "languages": "zh, en, id, ja, es",
+      "registers": ["subtitles", "spoken"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://github.com/naist-nlp/tubelex",
+      "downloads": [
+        { "url": "https://github.com/naist-nlp/tubelex/releases", "status": 200, "note": "Lists are published as releases; raw text is not redistributable, but video-ID lists allow rehydration" }
+      ],
+      "verdict": "⚠️ Covers NEITHER German NOR Arabic, so it is a METHOD to copy, not a source to take. Copy the output shape: count + videos + channels, i.e. frequency plus document-level dispersion. That is roadmap item B.",
+      "note": "In COLING 2025 evaluations TUBELEX matched or beat SUBTLEX and Wikipedia at predicting lexical decision times, word familiarity and lexical complexity. It ships raw forms, lemmas with POS, and several normalization levels — the per-language form-vs-lemma decision made explicit rather than assumed. Its pipeline is open source and is the most directly copyable prior art for this repo."
+    },
+    {
+      "id": "wiktionary-frequency-lists",
+      "name": "Wiktionary:Frequency lists",
+      "kind": "directory",
+      "languages": "many",
+      "registers": ["mixed"],
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://en.wiktionary.org/wiki/Wiktionary:Frequency_lists",
+      "downloads": [],
+      "verdict": "The best single directory of open frequency lists. Read it when adding a language; do not derive from it — share-alike, and the lists are of uneven provenance.",
+      "note": "Its English TV/movie-script list is the source of the widely quoted coverage figures: top 1,000 words cover 85.5% of tokens, top 10,000 cover 97.2%. Useful for calibrating what coverage number to expect, not as data."
+    },
+    {
+      "id": "bnc-coca-nation",
+      "name": "BNC/COCA word family lists (Paul Nation)",
+      "kind": "pedagogical",
+      "languages": "en",
+      "registers": ["mixed"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://www.eapfoundation.com/vocab/general/bnccoca/",
+      "downloads": [],
+      "verdict": "English only, so not a source here — but it is the model for roadmap item H, and it is the origin of the ~98%-at-8,000 figure that provenance.json already warns is not comparable to this repo's 88%.",
+      "note": "Built deliberately rather than merely counted: the top 2,000 families come from a 10M-word corpus weighted toward SPOKEN material so common conversational words are not missed, and bands 3k–25k from BNC + COCA rankings. Families are grouped by the Bauer–Nation levels. The curation, not the data, is the transferable part."
+    },
+    {
+      "id": "cc-100",
+      "name": "CC-100 — monolingual Common Crawl data",
+      "kind": "raw-corpus",
+      "languages": "100+",
+      "registers": ["web"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://data.statmt.org/cc-100/",
+      "downloads": [
+        { "url": "https://data.statmt.org/cc-100/de.txt.xz", "bytes": 18338624960, "status": 200, "note": "⚠️ 17.1 GB compressed" },
+        { "url": "https://data.statmt.org/cc-100/ar.txt.xz", "bytes": 5771901788, "status": 200, "note": "⚠️ 5.4 GB compressed" }
+      ],
+      "verdict": "Only if a much larger web sample is genuinely needed. 17 GB for German buys a register this project already has too much of — Leipzig's web corpus covers the same ground for 189 MB.",
+      "note": "Built from January–December 2018 Common Crawl snapshots. ⚠️ The frozen 2018 date is the ADVANTAGE: it predates mass generative-AI web text, so unlike a fresh crawl it is a clean observation of human writing. If a web crawl is ever needed, prefer this frozen snapshot over anything current."
+    },
+    {
+      "id": "oscar",
+      "name": "OSCAR — deduplicated Common Crawl",
+      "kind": "raw-corpus",
+      "languages": "166",
+      "registers": ["web"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://oscar-project.org/",
+      "downloads": [],
+      "verdict": "Skip for German and Arabic. Access is request-based, the register is one this project is already over-weighted in, and recent vintages are the ones wordfreq's author named as polluted.",
+      "note": "If ever used, take a 2021/2022 vintage rather than a current one, for the same reason CC-100's frozen snapshot is an advantage."
+    },
+    {
+      "id": "ud-german-gsd",
+      "name": "Universal Dependencies — German-GSD",
+      "kind": "annotation",
+      "languages": "de",
+      "registers": ["annotation"],
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_German-GSD",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_German-GSD/master/LICENSE.txt", "bytes": 202, "status": 200 }
+      ],
+      "verdict": "In use. Clean, and commercially shippable — share-alike constrains how the data file is licensed onward, not whether it may earn money.",
+      "note": "LICENSE.txt read in full on 2026-07-30: 'The treebank is licensed under the Creative Commons License Attribution-ShareAlike 4.0 International.' No non-commercial clause, no text restriction."
+    },
+    {
+      "id": "ud-german-hdt",
+      "name": "Universal Dependencies — German-HDT",
+      "kind": "annotation",
+      "languages": "de",
+      "registers": ["annotation"],
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_German-HDT",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_German-HDT/master/LICENSE.txt", "bytes": 266, "status": 200 }
+      ],
+      "verdict": "In use, with a constraint.",
+      "note": "LICENSE.txt read in full on 2026-07-30: 'The annotation of the treebank is licensed under the Creative Commons License Attribution-ShareAlike 4.0 International. The text can be distributed for academic use.' ⚠️ Annotation is CC BY-SA 4.0; the underlying TEXT is academic-use only. Only FORM and LEMMA are read and no source text is redistributed — do not widen the extraction without re-reading."
+    },
+    {
+      "id": "ud-german-lit",
+      "name": "Universal Dependencies — German-LIT",
+      "kind": "annotation",
+      "languages": "de",
+      "registers": ["annotation"],
+      "licence": "CC-BY-NC-SA-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_German-LIT",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_German-LIT/master/LICENSE.txt", "bytes": 195, "status": 200 }
+      ],
+      "verdict": "⚠️ DO NOT ADOPT — permanently, not conditionally. Non-commercial, and these lists are used commercially in Luraty. NC binds the licensee, so open-sourcing a derived list buys no commercial right the upstream never gave. The gate rejects it from both directions.",
+      "note": "LICENSE.txt read in full on 2026-07-30: 'The treebank is licensed under the Attribution-NonCommercial-ShareAlike 4.0 International.' Recorded here precisely so the obvious next German treebank is rejected on evidence rather than tried and reverted."
+    },
+    {
+      "id": "ud-arabic-padt",
+      "name": "Universal Dependencies — Arabic-PADT",
+      "kind": "annotation",
+      "languages": "ar",
+      "registers": ["annotation"],
+      "licence": "CC-BY-NC-SA-3.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_Arabic-PADT",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_Arabic-PADT/master/LICENSE.txt", "bytes": 19848, "status": 200 }
+      ],
+      "verdict": "⚠️ THE ARABIC BLOCKER. The largest and most obvious Arabic lemma source is NON-COMMERCIAL, and these lists are used commercially in Luraty — so it is out permanently. An NC-derived Arabic list could be published, but never shipped in the app. Publishing it open source does not lift the restriction: NC binds the licensee, and a derivative grants no right the upstream never gave.",
+      "note": "LICENSE.txt read on 2026-07-30: 'The Arabic UD treebank is derived from the Prague Arabic Dependency Treebank (PADT) and is distributed under the same license terms as PADT 1.0, which is CreativeCommons BY-NC-SA 3.0.' The full CC BY-NC-SA 3.0 text follows. This is why Arabic needs a licence decision before it needs code."
+    },
+    {
+      "id": "ud-arabic-pud",
+      "name": "Universal Dependencies — Arabic-PUD",
+      "kind": "annotation",
+      "languages": "ar",
+      "registers": ["annotation"],
+      "licence": "CC-BY-SA-3.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_Arabic-PUD",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_Arabic-PUD/master/LICENSE.txt", "bytes": 19556, "status": 200 }
+      ],
+      "verdict": "⭐ The only licence-clean Arabic lemma source of the three, and far too small — the PUD treebanks are ~1,000 parallel sentences. CC BY-SA 3.0 permits the commercial use Luraty makes; it just cannot lemmatize a 10k list alone.",
+      "note": "LICENSE.txt read on 2026-07-30: Creative Commons Attribution-ShareAlike 3.0. Usable, share-alike, no NC clause. Worth having as a supplement or a sanity check on whatever the main lemma source turns out to be."
+    },
+    {
+      "id": "ud-arabic-nyuad",
+      "name": "Universal Dependencies — Arabic-NYUAD",
+      "kind": "annotation",
+      "languages": "ar",
+      "registers": ["annotation"],
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "homepage": "https://github.com/UniversalDependencies/UD_Arabic-NYUAD",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_Arabic-NYUAD/master/LICENSE.txt", "bytes": 202, "status": 200 }
+      ],
+      "verdict": "⚠️ The licence file is clean and the treebank is still unusable here. It ships WITHOUT word forms — reconstructing them needs the Penn Arabic Treebank from the LDC, which is a paid licence.",
+      "note": "LICENSE.txt read on 2026-07-30: 'The treebank is licensed under the Creative Commons License Attribution-ShareAlike 4.0 International.' That covers the annotation layer only. A permissive licence on a file you cannot populate is the trap this entry exists to record."
+    },
+    {
+      "id": "camel-tools",
+      "name": "CAMeL Tools — Arabic NLP toolkit",
+      "kind": "library",
+      "languages": "ar",
+      "registers": ["annotation"],
+      "licence": "MIT",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://github.com/CAMeL-Lab/camel_tools",
+      "downloads": [],
+      "verdict": "The most likely route around the PADT non-commercial problem: a morphological analyser rather than a treebank. Investigate before writing any Arabic pipeline.",
+      "note": "⚠️ The toolkit's licence and its DATABASES' licences are separate questions, and the databases are what actually lemmatize. Some CAMeL morphology databases (notably the dialectal ones) carry their own restrictive terms. Check the database licences, not just the repository's."
+    },
+    {
+      "id": "tatoeba",
+      "name": "Tatoeba — crowd-sourced example sentences",
+      "kind": "raw-corpus",
+      "languages": "400+",
+      "registers": ["spoken"],
+      "licence": "CC-BY-4.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://tatoeba.org/en/downloads",
+      "downloads": [
+        { "url": "https://downloads.tatoeba.org/exports/per_language/deu/deu_sentences.tsv.bz2", "bytes": 11971124, "status": 200, "note": "German, 11 MB" },
+        { "url": "https://downloads.tatoeba.org/exports/per_language/ara/ara_sentences.tsv.bz2", "bytes": 766372, "status": 200, "note": "Arabic, 749 KB — small enough to be a rounding error against Leipzig" }
+      ],
+      "verdict": "⚠️ Tempting and weak. Cheap, permissive, and conversational in STYLE — but the sentences are translated and constructed rather than observed, so the frequencies describe what learners are taught, not what speakers say. Do not let it stand in for the spoken register.",
+      "note": "count-text.mjs already understands the .tsv shape (text after the last tab), so adopting it is nearly free — which is exactly why the weakness needs recording next to the convenience."
+    },
+    {
+      "id": "wikipedia-dumps",
+      "name": "Wikimedia database dumps",
+      "kind": "raw-corpus",
+      "languages": "300+",
+      "registers": ["encyclopedic"],
+      "licence": "CC-BY-SA-4.0",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://dumps.wikimedia.org/",
+      "downloads": [
+        { "url": "https://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2", "bytes": 7904787334, "status": 200, "note": "⚠️ 7.4 GB, and needs wikitext stripping before it is text" }
+      ],
+      "verdict": "Skip. Leipzig already ships a Wikipedia-derived corpus, pre-cleaned and pre-counted, at 197 MB — and share-alike means anything derived from this cannot be the permissive frequency list.",
+      "note": "utils/wikipedia.py fetches articles through the MediaWiki API, which is the right tool for sampling, not for corpus-scale collection."
+    },
+    {
+      "id": "gutenberg",
+      "name": "Project Gutenberg",
+      "kind": "raw-corpus",
+      "languages": "many",
+      "registers": ["literary"],
+      "licence": "PD",
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://www.gutenberg.org/",
+      "downloads": [],
+      "verdict": "Available via utils/gutenberg.py, currently unused by any language. Keep it that way unless a literary register is wanted deliberately.",
+      "note": "⚠️ Clean and permissive but OLD — pre-1920s literature, so the vocabulary skews archaic. Adding it to a general list makes the list worse, not bigger."
+    },
+    {
+      "id": "hunspell-dictionaries",
+      "name": "Hunspell spelling dictionaries",
+      "kind": "library",
+      "languages": "many",
+      "registers": ["annotation"],
+      "licence": null,
+      "licenceVerified": false,
+      "verifiedOn": null,
+      "homepage": "https://github.com/wooorm/dictionaries",
+      "downloads": [],
+      "verdict": "Needed for roadmap item E. The Worldlex pipeline calls spell-checker filtering 'important', and it is the step that removes typos and foreign-language contamination that a regex cannot.",
+      "note": "⚠️ Per-dictionary licences vary wildly and some are GPL, which matters if a dictionary is redistributed. Using one as a BUILD-TIME FILTER and shipping only the resulting word list is a different question from redistributing the dictionary — but it is still a question. The German (de_DE) and Arabic (ar) dictionaries carry different terms; check each."
+    }
+  ]
+}

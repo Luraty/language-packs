@@ -96,7 +96,19 @@ def read_list(language: str) -> list[str]:
 def render_card(language: str, sources: dict, provenance: dict, lemmas: list[str]) -> str:
     output = sources["outputs"]["out/frequency.txt"]
     publish = output["publish"]
-    licence_id, licence_name = HF_LICENCE[output["licence"]]
+
+    # A bare KeyError here would say `KeyError: 'CC-BY-SA-3.0'` and nothing else, on the one code
+    # path where the operator most needs to know what to do. The mapping is deliberately manual —
+    # Hugging Face's licence ids are not the ids in sources.json — so a miss means a human has to
+    # add a row, and the message should say so.
+    try:
+        licence_id, licence_name = HF_LICENCE[output["licence"]]
+    except KeyError:
+        known = ", ".join(sorted(HF_LICENCE))
+        sys.exit(
+            f"\n{language}: licence {output['licence']!r} has no Hugging Face equivalent recorded.\n"
+            f"Add it to HF_LICENCE in hf/publish.py. Known: {known}"
+        )
 
     used = {s["id"] for s in sources["sources"]} & set(output["derivedFrom"])
     attribution = "\n".join(

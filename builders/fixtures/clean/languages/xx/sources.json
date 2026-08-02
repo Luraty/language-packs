@@ -15,7 +15,9 @@
       "licence": "CC-BY-4.0",
       "licenceVerified": true,
       "verifiedOn": "2026-07-30",
-      "redistributeDerived": true
+      "redistributeDerived": true,
+      "register": "subtitles",
+      "snapshotYear": 2018
     }
   ]
 }

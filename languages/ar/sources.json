@@ -2,38 +2,49 @@
   "language": "ar",
   "name": "Arabic",
   "status": "corpora acquired, no pipeline",
-  "note": "⚠️ The Arabic corpora below are DOWNLOADED but the code that processed them is GONE. It lived in the sibling repo's tools/content/zipf/ar_zipf/, which was deleted in the 2026-07-27 blank-canvas reset; only the archives and a 15 MB lemma_cache.json survive, in an unignored directory totalling 3.2 GB. Arabic also needs a decision the German pipeline never faced: inherited dialect and written MSA are separate systems and must be measured separately, so 'Arabic frequency' is at least two lists.",
+  "note": "⚠️ The Arabic corpora below are DOWNLOADED but the code that processed them is GONE. It lived in the sibling repo's tools/content/zipf/ar_zipf/, which was deleted in the 2026-07-27 blank-canvas reset; only the archives and a 15 MB lemma_cache.json survive, in an unignored directory totalling 3.2 GB. See docs/ROADMAP.md item G for the plan, and note the lemmatizer problem below — it is the blocker, not the counting.",
+  "registerDecision": "⚠️ 'Arabic frequency' is at least two lists, and the register field is how they get measured apart. Written MSA and inherited spoken dialect are related but different systems, and a single merged count describes neither. The split falls out of the corpora themselves: news and Wikipedia (register 'news'/'encyclopedic') are MSA; subtitles (register 'subtitles') are heavily dialectal, because dubbing and subtitling are done in Egyptian and Levantine rather than MSA. So the register mix that the methodology recommends for ANY language happens to be the same axis that separates MSA from dialect here — build both lists from the same pipeline, tag them, and never sum them.",
+  "lemmatizerBlocker": "⚠️ Arabic is morphologically rich, so unlike German a surface-form list is not merely suboptimal — it fragments every word across clitics and inflections and the list is close to meaningless. Lemmatization is mandatory. The obvious source, UD_Arabic-PADT, is CC BY-NC-SA 3.0 (read 2026-07-30) — NON-COMMERCIAL, which the licence gate now rejects for any output not itself NC. UD_Arabic-PUD is CC BY-SA 3.0 and clean but is only ~1,000 sentences. UD_Arabic-NYUAD carries a CC BY-SA 4.0 licence file but ships WITHOUT word forms: reconstructing it needs the Penn Arabic Treebank from the LDC, which is paid. There is no free, commercially-usable, large Arabic lemma source among the obvious three. Resolve this before writing any pipeline code.",
   "outputs": {},
   "sources": [
     {
       "id": "leipzig-ara_news_2020_1M",
+      "catalogId": "leipzig",
       "name": "Leipzig Corpora Collection — ara_news_2020_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_news_2020_1M.tar.gz",
       "licence": "CC-BY-3.0",
       "licenceVerified": false,
       "verifiedOn": null,
       "redistributeDerived": true,
-      "note": "Downloaded. Same unread-licence problem as the German Leipzig sources."
+      "register": "news",
+      "snapshotYear": 2020,
+      "note": "Downloaded. Same unread-licence problem as the German Leipzig sources — see languages/de/sources.json for what was tried. MSA register."
     },
     {
       "id": "leipzig-ara_news_2022_1M",
+      "catalogId": "leipzig",
       "name": "Leipzig Corpora Collection — ara_news_2022_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_news_2022_1M.tar.gz",
       "licence": "CC-BY-3.0",
       "licenceVerified": false,
       "verifiedOn": null,
       "redistributeDerived": true,
-      "note": "Downloaded."
+      "register": "news",
+      "snapshotYear": 2022,
+      "note": "Downloaded. MSA register. Post-2021 collection, so the AI-contamination warning fires — the 2020 sibling is the cleaner observation and both are held, which is the right position."
     },
     {
       "id": "leipzig-ara_wikipedia_2021_1M",
+      "catalogId": "leipzig",
       "name": "Leipzig Corpora Collection — ara_wikipedia_2021_1M",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/ara_wikipedia_2021_1M.tar.gz",
       "licence": "CC-BY-3.0",
       "licenceVerified": false,
       "verifiedOn": null,
       "redistributeDerived": true,
-      "note": "Downloaded. Wikipedia text underneath is CC BY-SA — check whether Leipzig's redistribution terms or Wikipedia's govern a derived count list before publishing anything from this one."
+      "register": "encyclopedic",
+      "snapshotYear": 2021,
+      "note": "Downloaded. MSA register, and the most formal of the three. ⚠️ Two licences are in play: Leipzig's terms for the compilation, and CC BY-SA on the Wikipedia text underneath. If Wikipedia's share-alike reaches a derived count list, an output built from this source cannot be CC BY — the gate will say so once an output declares it. Settle which governs before declaring any output."
     }
   ]
 }

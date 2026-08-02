@@ -25,43 +25,53 @@
   "sources": [
     {
       "id": "leipzig-deu_news_2024_300K",
+      "catalogId": "leipzig",
       "name": "Leipzig Corpora Collection — deu_news_2024_300K",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/deu_news_2024_300K.tar.gz",
       "licence": "CC-BY-3.0",
       "licenceVerified": false,
       "verifiedOn": null,
       "redistributeDerived": true,
-      "note": "The downloaded archive ships NO licence file; the CC BY claim comes from the project's web pages, which are bot-protected and could not be read. An earlier note in the sibling repo claimed CC BY-NC and was wrong. Read the terms and stamp this before publishing."
+      "register": "news",
+      "snapshotYear": 2024,
+      "note": "The downloaded archive ships NO licence file; the CC BY claim comes from the project's web pages. Four routes were tried on 2026-07-30 — /en/usage, /en/download/, repo.data.saw-leipzig.de and the CLARIN VLO — and /en/usage answers with an interstitial reading 'Making sure you're not a bot!'. So the terms remain UNREAD, which is what keeps this false. An earlier note in the sibling repo claimed CC BY-NC and was wrong. ⚠️ Also unresolved: the version. This file says 3.0; the corpora project publishes word lists as CC BY 3.0 but its RDF datasets as CC BY 4.0, and secondary summaries cite 4.0 for the downloadable corpora. Settle the version in the same reading."
     },
     {
       "id": "leipzig-deu-de_web_2021_300K",
+      "catalogId": "leipzig",
       "name": "Leipzig Corpora Collection — deu-de_web_2021_300K",
       "url": "https://downloads.wortschatz-leipzig.de/corpora/deu-de_web_2021_300K.tar.gz",
       "licence": "CC-BY-3.0",
       "licenceVerified": false,
       "verifiedOn": null,
       "redistributeDerived": true,
-      "note": "Same archive family, same unread licence. Verify with the other Leipzig source in one pass."
+      "register": "web",
+      "snapshotYear": 2021,
+      "note": "Same archive family, same unread licence, same unresolved version. Verify with the other Leipzig source in one pass."
     },
     {
       "id": "ud-german-gsd",
+      "catalogId": "ud-german-gsd",
       "name": "Universal Dependencies — German-GSD treebank",
       "url": "https://github.com/UniversalDependencies/UD_German-GSD",
       "licence": "CC-BY-SA-4.0",
-      "licenceVerified": false,
-      "verifiedOn": null,
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
-      "note": "Asserted in the German pack's ATTRIBUTION.md on 2026-07-28; the treebank's own LICENSE.txt has not been read here. Cheap to close — clone and read it."
+      "register": "annotation",
+      "note": "Verified by reading the treebank's own LICENSE.txt at https://raw.githubusercontent.com/UniversalDependencies/UD_German-GSD/master/LICENSE.txt on 2026-07-30. It reads, in full: 'The treebank is licensed under the Creative Commons License Attribution-ShareAlike 4.0 International.' No non-commercial clause, no text-use restriction."
     },
     {
       "id": "ud-german-hdt",
+      "catalogId": "ud-german-hdt",
       "name": "Universal Dependencies — German-HDT treebank",
       "url": "https://github.com/UniversalDependencies/UD_German-HDT",
       "licence": "CC-BY-SA-4.0",
-      "licenceVerified": false,
-      "verifiedOn": null,
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
-      "note": "⚠️ Annotation is CC BY-SA 4.0 but the underlying TEXT is academic-use only. Only the FORM and LEMMA columns are read and no source text is redistributed, which is what keeps this usable — do not widen the extraction without re-reading the terms."
+      "register": "annotation",
+      "note": "Verified by reading LICENSE.txt at https://raw.githubusercontent.com/UniversalDependencies/UD_German-HDT/master/LICENSE.txt on 2026-07-30: 'The annotation of the treebank is licensed under the Creative Commons License Attribution-ShareAlike 4.0 International. The text can be distributed for academic use.' ⚠️ That second sentence is the constraint. The ANNOTATION is CC BY-SA 4.0; the underlying TEXT is academic-use only. Only the FORM and LEMMA columns are read and no source text is redistributed, which is what keeps this usable — do not widen the extraction without re-reading the terms."
     },
     {
       "id": "luraty-irregulars-de",
@@ -71,6 +81,7 @@
       "licenceVerified": true,
       "verifiedOn": "2026-07-30",
       "redistributeDerived": true,
+      "register": "hand-written",
       "note": "Original work, no upstream. Verified by authorship."
     }
   ]

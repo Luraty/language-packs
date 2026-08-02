@@ -30,13 +30,23 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
-const flag = (name) => {
-  const i = args.indexOf(name);
-  return i >= 0 ? args[i + 1] : undefined;
-};
-const out = flag('--out');
-const irregularsFile = flag('--irregulars');
-const positional = args.filter((a) => !a.startsWith('--') && a !== out && a !== irregularsFile);
+const flagIndex = (name) => args.indexOf(name);
+const outIndex = flagIndex('--out');
+const irregularsIndex = flagIndex('--irregulars');
+const out = outIndex >= 0 ? args[outIndex + 1] : undefined;
+const irregularsFile = irregularsIndex >= 0 ? args[irregularsIndex + 1] : undefined;
+
+// ⚠️ Positional arguments are excluded BY INDEX, not by value. Filtering on `a !== out` drops any
+// input whose path happens to equal a flag's value — and the two flag values here are paths in the
+// same tree as the inputs, so it is one `--out languages/de/out/frequency.txt` away from silently
+// eating pass two's frequency list and reporting "usage:" on a correct command line.
+//
+// Its sibling build-frequency.mjs already carries a warning about the mirror-image version of this
+// bug (`indexOf` returning -1, so `-1 + 1` excluded argument zero). Same class, same file pair.
+const valueIndices = new Set(
+  [outIndex, irregularsIndex].filter((i) => i >= 0).map((i) => i + 1),
+);
+const positional = args.filter((a, i) => !a.startsWith('--') && !valueIndices.has(i));
 const [frequencyFile, ...treebanks] = positional;
 
 if (!frequencyFile || !out || treebanks.length === 0) {

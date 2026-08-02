@@ -1,0 +1,23 @@
+{
+  "language": "xx",
+  "name": "Typo fixture — a share-alike licence id with one dash missing",
+  "note": "The regression test for the hole. `CC-BY-SA4.0` split on dashes gives ['CC','BY','SA4.0'], which does not contain 'SA', so the original check read this source as permissive and let it contaminate a CC BY output in silence. The whitelist must reject the id outright rather than guess at its terms.",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["typo'd-share-alike"],
+      "licence": "CC-BY-4.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "typo'd-share-alike",
+      "name": "Meant to be CC BY-SA 4.0, typed with a dash missing",
+      "licence": "CC-BY-SA4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "annotation"
+    }
+  ]
+}

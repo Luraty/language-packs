@@ -1,0 +1,34 @@
+{
+  "language": "xx",
+  "name": "Register fixture — written-only sources, one of them collected after 2021",
+  "note": "Both arms here are WARNINGS, and the test asserts exit 0 alongside them. That is the claim being tested: a register gap does not make a list wrong, it makes it a list of how people write. Turning it into a failure would block the only German list that exists.",
+  "outputs": {
+    "out/words.txt": {
+      "derivedFrom": ["newsy", "webby"],
+      "licence": "CC-BY-4.0",
+      "publish": null
+    }
+  },
+  "sources": [
+    {
+      "id": "newsy",
+      "name": "News text, collected well before the generative-AI era",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "news",
+      "snapshotYear": 2015
+    },
+    {
+      "id": "webby",
+      "name": "Web crawl, collected after the contamination cutoff",
+      "licence": "CC-BY-4.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "register": "web",
+      "snapshotYear": 2024
+    }
+  ]
+}
