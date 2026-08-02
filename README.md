@@ -14,26 +14,30 @@ Two audiences, and the split is deliberate:
 
 | Language | Frequency list | Lemma table | Pipeline |
 | --- | --- | --- | --- |
-| German (`de`) | ✅ 10,000 lemmas | ✅ 15,471 inflections | ✅ reproducible |
-| Arabic (`ar`) | ❌ | ❌ | ❌ corpora only — see below |
+| German (`de`) | ✅ 10,000 lemmas | ✅ 83,361 inflections | ✅ reproducible |
+| Arabic (`ar`) | ✅ 10,000 MSA lemmas | ✅ 86,910 inflections | ✅ reproducible |
+| Qur'anic Arabic (`ar-x-quran`) | ✅ 9,598 lemmas | ✅ + mushaf spelling | ✅ reproducible |
 
 ## The pipeline
 
 ```
   ┌─ acquire ──────────────┐   ┌─ transform ─────────────┐   ┌─ publish ────┐
-  │  Gutenberg · Wikipedia │   │  count → rank           │   │  Hugging     │
-  │  Hugging Face · Leipzig│──▶│  → lemmatize → re-rank  │──▶│  Face        │
-  │  utils/*.py   PYTHON   │   │  builders/*.mjs   NODE  │   │  hf/  PYTHON │
+  │  Leipzig corpora  CC BY│   │  lemma table (CC0)      │   │  Hugging     │
+  │  Wikidata Lexemes  CC0 │──▶│  → count → rank         │──▶│  Face        │
+  │  builders/fetch_*.py   │   │  builders/  PY + NODE   │   │  hf/  PYTHON │
   └────────────────────────┘   └─────────────────────────┘   └──────────────┘
           data/  (gitignored)      languages/<lang>/out/       N+1 datasets
 ```
 
-**Why two languages in one repo.** Acquisition and publishing are Python because that is where the
-Hugging Face tooling lives. The transformation stage is Node because it already exists, is already
-correct, and its comments record five specific silent failures that a rewrite would have to
-rediscover — see `provenance.json`'s `lemmatizerWarning`. The German corpora are not on this machine,
-so a rewrite could not even be verified. The seam between the two is a **file format**, not an API:
+**Why two languages in one repo, and why it is nearly one.** Everything is Python now except
+`build-frequency.mjs`, the ranker. The licence gate was ported first, checked byte-for-byte against
+the Node original across nine argument combinations spanning exit 0, 1 and 2; the lemmatizer was
+rewritten in Python outright when it moved to Wikidata. The seam is a **file format**, not an API:
 Leipzig's `rank <TAB> word <TAB> count`. Neither half imports the other.
+
+The ranker is the last piece. It is worth porting the same careful way — against the Node original,
+asserting identical bytes — because it is where the counts actually get summed onto lemmas, and a
+subtle change there is invisible in a diff of the output.
 
 ## Use it
 
@@ -43,21 +47,29 @@ make check           # licence + provenance gate  ← run this before anything
 make test            # the gate's own tests
 ```
 
-Nothing to install for `check` and `test` — the Node builders are dependency-free. The Python side
-uses [uv](https://docs.astral.sh/uv/): `uv sync`.
+Nothing to install for `check` and `test` — the gate is stdlib-only Python and must stay that way,
+which `test_gate.py` asserts. A gate that needs `uv sync` before it can tell you whether a licence
+is verified is a gate people route around. The transform builders are dependency-free Node. Only
+publishing needs [uv](https://docs.astral.sh/uv/): `uv sync`.
 
 ### Rebuilding German from scratch
 
 ```bash
-make corpora-de      # downloads Leipzig + clones the UD treebanks into data/
-make de              # two passes, ~1 minute
+make corpora-de      # downloads the Leipzig corpora into data/  (~130 MB)
+make de              # fetches the Wikidata dump if absent, then builds
 ```
 
-`make de` runs the build **twice** on purpose. Pass one ranks surface forms, because there is no
-lemma table yet; the lemma table is built from that ranking; pass two re-ranks with each surface
-count summed onto its lemma. Skipping pass two splits a word's frequency across its inflections —
-`vergangen`, `eigen` and `zweit` fall out of the top 10,000 while `vergangenen`, `eigenen` and
-`zweiten` stay in, and 750 entries end up with a key nothing can rank.
+The lemma table comes from **Wikidata Lexemes**, which is **CC0** — public domain, no attribution
+owed, and it expressly waives the EU database right that every share-alike alternative leaves open.
+That replaced the UD treebanks, which were CC BY-SA and quietly made the frequency list share-alike
+too; see `languages/de/sources.json`.
+
+Swapping the lemmatizer reproduced this project's worst bug class **four times** — `warten→warte`,
+`stärke→stärken`, `in→-in` (which deleted a top-20 German word by filing the preposition under the
+feminine *suffix*), and `heute→heuen`, "today" filed under "to make hay". The last one was only found
+while building Arabic, where the same flaw put `في` under `وفى` and produced a visibly wrong top ten.
+All are pinned as tests in `builders/test_lemmas.py`. If you change the lemmatizer again, expect the
+same, and do not rely on diffing the output to catch it.
 
 ## Licensing is a gate, not a paragraph
 
@@ -69,12 +81,22 @@ says *"Confirm the current terms before shipping"* — and the Leipzig licence h
 anyway, once as CC BY-**NC**, which was briefly treated as a blocker that killed the language.
 
 It also catches the mistake a human reviewer reliably misses: **Hugging Face carries one licence
-field per dataset.** `frequency.txt` is CC BY, `lemmas.tsv` is CC BY-**SA**. Publish them together
-and share-alike swallows both, so every downstream user of the frequency list inherits an obligation
-— and a frequency list nobody can use permissively is not the public good this repo exists for.
+field per dataset.** Publish a CC BY-SA lemma table alongside a CC BY frequency list and share-alike
+swallows both, so every downstream user inherits an obligation — and a frequency list nobody can use
+permissively is not the public good this repo exists for.
 
-> **Nothing is publishable right now**, by design. Four upstream licences are unstamped. Read them,
-> set `licenceVerified` and `verifiedOn`, and the gate opens.
+Both German files are CC BY 4.0 today, so that constraint does not currently bind. It stays anyway,
+because it caught the real thing: `frequency.txt` was declared CC BY while being built *through* a
+CC BY-SA lemma table, and the check could not fire because `derivedFrom` did not mention it. **A gate
+only sees what it is told** — which is why there is now a separate test asserting the declaration
+matches what the build actually reads.
+
+> **The gate is open as of 2026-07-30.** Every German and Arabic source is stamped. Leipzig's terms were
+> read from their own page via the Wayback Machine (the live site is bot-gated and the tarballs ship
+> no licence file): CC BY-NC governs their **query portal**, while "All corpora provided for download
+> are licensed under CC BY" — the distinction the earlier CC BY-NC scare got wrong. One inconsistency
+> remains recorded and unresolved: Leipzig's own CLARIN repository labels other LCC corpora CC BY-NC.
+> None of ours are among them, but a confirming email is cheap insurance.
 
 ## Publishing to Hugging Face
 
@@ -107,11 +129,55 @@ npm, the pack moves here and the duplication ends. Recorded as
 Two analysis tools stayed behind for the same reason — `coverage-curve.mjs` and `diagnose-gap.mjs`
 bundle against the engine to measure a pack, so they cannot run here.
 
+## Qur'anic Arabic
+
+```bash
+make quran
+```
+
+The cleanest pack here: the text is 7th-century and public domain, the lexicon is CC0, so there is no
+upstream licence to inherit. 77,878 word tokens → **9,598 lemmas**.
+
+**`ar-x-quran`, not `ar-QA`** — `QA` is the region code for *Qatar*. Per the IANA registry there is
+no registered variant subtag for Arabic and no ISO code for Classical Arabic, so BCP 47 private use
+is the only well-formed way to say this.
+
+Keys are modern orthography; `out/uthmani.tsv` holds the mushaf spelling, which differs for 2,689
+forms (`ٱلله`→`الله`, `فى`→`في`, `ءامنوا`→`آمنوا`). Handling that lifted lexicon coverage from 58.0%
+of tokens to 78.8% — but each rewrite is conditional on resolving to a known word, because an
+unconditional final `ى`→`ي` turns `على` into `علي`.
+
+⚠️ Not usable, despite being the obvious tool: the Quranic Arabic Corpus is GPL **and** states
+"CHANGING IT IS NOT ALLOWED."
+
+⚠️ A single closed text, so the counts describe the Qur'an exactly rather than sampling a language.
+
 ## Arabic
 
-The corpora are downloaded — `ara_news_2020_1M`, `ara_news_2022_1M`, `ara_wikipedia_2021_1M`, about
-3.2 GB — but **the code that processed them is gone**, deleted with the rest of the content pipeline
-on 2026-07-27. Only the archives and a 15 MB lemma cache survive.
+Built 2026-07-30, MSA newswire, **CC BY 4.0** — same shape as German and the same CC0 lemma source.
 
-Arabic also needs a decision German never faced: inherited dialect and written MSA are related but
-different systems, so "Arabic frequency" is at least two lists, measured separately.
+```bash
+make corpora-ar && make ar
+```
+
+**What made it hard was licensing, not linguistics.** Every full-coverage MSA morphological analyser
+is blocked: CAMeL's MSA databases are GPL v2, UD Arabic-PADT is CC BY-NC-SA, NYUAD ships no word
+forms and needs the Penn Arabic Treebank from the LDC ($13,500, research-only, redistribution
+forbidden at any price), Farasa is research-only, Alkhalil is NC, Qabas is ND. Wikidata Lexemes (CC0)
+is the only clean link in the chain — and its Arabic forms are fully diacritized, which recovers the
+vocalization the GPL database was otherwise the only source of.
+
+The archived pipeline in lughaty (`archive/pre-reset-2026-07-27`) is **not** what produced these
+files, and its licence note is why: it recorded "CAMeL Tools (MIT)" and said nothing about the
+GPL-v2 *databases* underneath.
+
+Three things change for Arabic and each was a bug before it was a flag: diacritics are stripped on
+both sides so the diacritized lexicon joins the undiacritized corpus; the definite article `ال` is
+joined to its noun (a proclitic on **23.9%** of tokens); and suffix generation is off, because Arabic
+plurals are internal vowel changes with nothing to append.
+
+⚠️ **MSA only.** Inherited dialect is a separate system and is not measured here. That needs a
+dialect *corpus*, not a flag — Leipzig's Arabic is all newswire MSA.
+
+⚠️ `ara_wikipedia_2021_1M` is downloaded and deliberately unused: CC BY-SA upstream. Dropping one
+corpus is cheaper than defending the argument that a count table doesn't inherit it.

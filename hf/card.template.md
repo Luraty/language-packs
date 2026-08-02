@@ -64,20 +64,23 @@ in the pipeline changed and the difference is worth reading before trusting the 
 
 **Licence: {license_name}.**
 
-⚠️ This dataset contains the frequency list **only**. The matching lemma table is CC BY-SA, and
-bundling it here would make this dataset share-alike too — which would defeat the purpose of
-publishing a list anyone can use.
+This dataset contains the frequency list **only**. The matching form→lemma table is published
+separately — Hugging Face carries one licence field per dataset, and keeping them apart is what
+guarantees this list stays usable under its stated licence no matter what a future lemma source
+turns out to require.
 
 ## Caveats worth knowing before you rely on this
 
 - **A frequency list is a picture of its corpus.** {register_caveat}
-- **Coverage is not the number you might assume.** Measured against held-out text, the top 10,000
-  lemmas cover about **88% of news** and **82% of Wikipedia** running tokens. Literature figures
-  near 98% are quoted for *word families* on other corpora with other tokenizers — not comparable,
-  and not a shortfall.
-- **Lemmatization is never perfect.** These lemmas come from human-annotated treebanks rather than
-  suffix rules, because rules fail *silently* and plausibly. Errors that remain are mostly
-  homographs resolved the wrong way.
+- **No coverage figure is published, on purpose.** An earlier one measured a different pipeline and
+  is no longer true; nobody has re-run it. Figures near 98% quoted in the literature are for *word
+  families* on other corpora with other tokenizers and are not comparable in any case.
+- **Lemmatization is never perfect.** The lemmas come from [Wikidata
+  Lexemes](https://www.wikidata.org/wiki/Wikidata:Lexicographical_data) (CC0) rather than suffix
+  rules, because rules fail *silently* and plausibly — an earlier rule-based version produced
+  `warten→waren` ("to wait"→"were"), which no guard caught because the wrong answer is itself a
+  common word. Remaining errors are mostly homographs resolved the wrong way, decided by corpus
+  frequency where the lexicon offers more than one candidate.
 
 ## Part of Luraty
 

@@ -1,0 +1,66 @@
+{
+  "language": "ar-x-quran",
+  "name": "Qur'anic Arabic",
+  "baseLanguage": "ar",
+  "tagNote": "BCP 47 private use, and the alternatives are all wrong. `ar-QA` means Arabic as used in QATAR — `QA` is the ISO region code — and every i18n library will read it that way. `ar-qu` is malformed: variant subtags must be 5-8 characters. Checked against the IANA language-subtag-registry on 2026-07-30: there is NO registered variant subtag for Arabic at all, and no ISO 639-3 code for Classical Arabic — Classical Syriac has `syc` and Classical Armenian `xcl`, but Arabic's classical register is folded into `arb`. Private use (`-x-`) is the only well-formed way to say this and cannot collide with a country code.",
+  "status": "built — Qur'anic Arabic, CC BY 4.0",
+  "note": "A separate pack rather than a register of `ar`, for the reason the Hugging Face repos are named for the search: somebody looking for Qur'anic vocabulary is not looking for a general Arabic frequency list. Different corpus, different orthography, different register — but the same pipeline, same script handling, same CC0 lexicon.",
+  "orthography": "KEYS ARE MODERN ORTHOGRAPHY; out/uthmani.tsv carries the mushaf spelling for display. 2,689 of the forms differ. The rewrites (ٱ→ا, ءا→آ, ىء→يء, final ى→ي) are each CONDITIONAL on resolving to a word the lexicon knows, because an unconditional final ى→ي turns على into علي — على ends in alef maqsura in modern orthography too, as do إلى, حتى and متى, and they are among the commonest words in the text. Handling Uthmani spelling lifted lexicon coverage from 58.0% of tokens to 78.8%.",
+  "outputs": {
+    "out/frequency.txt": {
+      "description": "The Qur'anic Arabic vocabulary, 9,598 lemmas, commonest first.",
+      "derivedFrom": [
+        "quran-text",
+        "wikidata-lexemes-ar"
+      ],
+      "licence": "CC-BY-4.0",
+      "publish": {
+        "huggingface": "younissk/quranic-arabic-word-frequency",
+        "prettyName": "Qur'anic Arabic Word Frequency List (9,598 lemmas)",
+        "languageName": "Qur'anic Arabic",
+        "corpusSummary": "The complete text of the Qur'an — 6,236 verses, 77,878 word tokens, 14,811 distinct surface forms",
+        "registerCaveat": "Classical Arabic, not Modern Standard Arabic and not any spoken dialect. It is a single closed text of ~78,000 words, so the counts describe THIS text exactly rather than estimating a language: a word occurring twice here is genuinely rare in the Qur'an, which is not the same claim as being rare in Arabic. Keys use modern orthography; uthmani.tsv holds the mushaf spelling."
+      }
+    },
+    "out/lemmas.tsv": {
+      "description": "Inflected surface forms mapped to their lemma, from Wikidata Lexemes (CC0).",
+      "derivedFrom": [
+        "wikidata-lexemes-ar",
+        "quran-text"
+      ],
+      "licence": "CC-BY-4.0",
+      "publish": null
+    },
+    "out/uthmani.tsv": {
+      "description": "Each modern-orthography key mapped to its Uthmani (mushaf) spelling.",
+      "derivedFrom": [
+        "quran-text"
+      ],
+      "licence": "CC-BY-4.0",
+      "publish": null,
+      "publishNote": "The display column. Ships with the frequency list rather than separately — it is meaningless without the keys it annotates."
+    }
+  },
+  "sources": [
+    {
+      "id": "quran-text",
+      "name": "The Qur'an — text of the mushaf",
+      "url": "https://github.com/semarketir/quranjson",
+      "licence": "CC0-1.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "note": "PUBLIC DOMAIN BY AGE — the cleanest source in this repo. The text is 7th-century, so no copyright subsists in the WORK; at most a particular digitization could claim thin rights, and a faithful transcription of a public-domain text attracts no new copyright in most jurisdictions (explicit in the EU: Directive (EU) 2019/790 Art. 14 denies protection to faithful reproductions of public-domain works). The digitization used, semarketir/quranjson, is MIT-licensed, which covers its packaging; recorded as CC0 here because that is the status of what is actually redistributed — counts derived from a public-domain text. ⚠️ WHAT WAS NOT USED, and it is the obvious thing: the Quranic Arabic Corpus (corpus.quran.com) has 3,680 hand-annotated lemmas and would have been ideal. Its terms are GPL PLUS 'Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED.' A derived lemma-frequency list is exactly the change that forbids."
+    },
+    {
+      "id": "wikidata-lexemes-ar",
+      "name": "Wikidata Lexemes — Arabic (Q13955)",
+      "url": "https://dumps.wikimedia.org/wikidatawiki/entities/latest-lexemes.json.gz",
+      "licence": "CC0-1.0",
+      "licenceVerified": true,
+      "verifiedOn": "2026-07-30",
+      "redistributeDerived": true,
+      "note": "Same source and same dump as languages/ar. ⚠️ The lemma table for this pack is built against the LEIPZIG Arabic corpora AS WELL as the Qur'an, and that is deliberate: the homograph tiebreak and rarity guard are statistical and need a large frequency signal to decide that في is a word in its own right rather than an inflection of the rare verb وفى. Built against the Qur'an alone — 77,878 tokens — the statistics are too thin and في lands under وفى, the same error that made the first Arabic build's top ten wrong. Leipzig decides; the Qur'an contributes vocabulary and all of the ranking."
+    }
+  ]
+}
