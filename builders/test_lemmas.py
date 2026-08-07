@@ -321,21 +321,18 @@ class TiebreakGuards(unittest.TestCase):
         self.assertEqual(rows.get("الأول"), "أول")
         self.assertEqual(rows.get("الأولى"), "أول")
 
-    def test_the_table_stays_clear_of_the_hermes_property_ceiling(self):
-        # ⚠️ **A REAL CEILING, NOT A ROUND NUMBER.** `parseLemmas` materialises the whole table as
-        # own properties on ONE plain object, and **Hermes caps a plain object at 196,607 own
-        # properties** — measured, engine/docs/guides/benchmarking.md. Hermes is the runtime React
-        # Native ships and the one lane that cannot show you this: every other lane runs on Node,
-        # where the limit does not exist. An unfloored proclitic join lands at 192,159, which is
-        # 2.3% of headroom, so the next corpus refresh would crash the app on device with all 617
-        # jest tests green.
+    def test_the_table_has_not_lost_rows_wholesale(self):
+        # ⚠️ VACUITY GUARD. Every other assertion in this class is satisfied by a SMALLER table, so
+        # a builder that deleted most of the file would pass them all.
         #
-        # The lower bound is the vacuity half: every other assertion in this class is satisfied by
-        # a SMALLER table, so a builder that deleted most of the file would pass them all.
+        # ⚠️ **THIS USED TO CARRY AN UPPER BOUND AGAINST HERMES' 196,607 OWN-PROPERTY CAP ON A PLAIN
+        # OBJECT, AND THAT BOUND IS GONE ON PURPOSE.** The packs build a `ReadonlyMap` now
+        # (lughaty#210), which has no such limit, so the ceiling that forced a frequency floor onto
+        # the proclitic join no longer exists. If `parseLemmas` is ever changed back to a plain
+        # object, this table at 192,136 rows is 2.3% under a hard crash on device — and no lane in
+        # either repo would say so, because they all run on Node.
         rows = table("ar")
-        self.assertGreater(len(rows), 100_000, "the table has lost rows wholesale")
-        self.assertLess(len(rows), 150_000,
-                        "within reach of Hermes' 196,607 own-property cap on a plain object")
+        self.assertGreater(len(rows), 150_000, "the table has lost rows wholesale")
 
 
 class ProcliticJoin(unittest.TestCase):
@@ -382,6 +379,54 @@ class ProcliticJoin(unittest.TestCase):
                     lemma is not None and len(lemma) < len(word) and word.endswith(lemma),
                     f"{word} was taken apart into a proclitic plus {lemma!r}",
                 )
+
+
+class DerivationalTemplates(unittest.TestCase):
+    """A maṣdar or a participle is commoner than its verb, and that is not evidence — lughaty#209.
+
+    The unlisted-form rule refuses to file a word under something 20x rarer. Arabic derivation
+    breaks that reasoning: `قائلا` is **198x** commoner than `قائل` and is still its accusative.
+    A blind held-out A/B put 15 of 118 decisions in the *worse* column and every one was this shape.
+
+    ⚠️ **A ROOT SKELETON CANNOT SEPARATE THEM AND THAT WAS MEASURED.** `قائلا`/`قائل` and `كما`/`كم`
+    both share a skeleton; the first must stay mapped and the second must not. What separates them
+    is that Arabic derivation runs on TEMPLATES, so it is a string test rather than a statistic.
+    """
+
+    def test_a_participle_keeps_its_accusative_and_its_plural(self):
+        rows = table("ar")
+        for form, lemma in [("قائلا", "قائل"), ("مؤكدا", "مؤكد"), ("مضيفا", "مضيف"),
+                            ("مبينا", "مبين"), ("المستضعفين", "مستضعف")]:
+            with self.subTest(form=form):
+                self.assertEqual(rows.get(form), lemma)
+
+    def test_a_masdar_is_its_own_headword(self):
+        # ⚠️ **THE ARM THAT WAS BUILT, MEASURED AND REMOVED.** `استهلاك ← استهلك` (form X) and
+        # `تعزيز ← عزز` (form II تفعيل) were implemented, and a blind held-out A/B of 60 rows with
+        # three judges **refuted them 15:40 — the rule was preferred in 27%**, against 73% for
+        # leaving them alone. The reason was unanimous across all three framings: a maṣdar is its
+        # own DICTIONARY HEADWORD. `اتحاد` is "union", a noun a learner meets as a noun; filing it
+        # under `اتحد` credits a verb she has not read.
+        #
+        # This test pins the REMOVAL, so re-adding the arm turns a suite red instead of quietly
+        # re-losing 40 held-out decisions.
+        rows = table("ar")
+        # ⚠️ `مهرجان` is NOT here. It is filed under `مهرج` ("clown", an unrelated Persian loan)
+        # and the judges called that pair "neither" — a pre-existing tiebreak error this rule does
+        # not touch and does not claim to fix. Pinning it would assert a fix that does not exist.
+        for word in ["اتحاد", "احترام", "اختبار", "استطلاع", "انطباع", "تمويل"]:
+            with self.subTest(word=word):
+                self.assertIsNone(rows.get(word), f"{word} is a headword, filed under {rows.get(word)!r}")
+
+    def test_it_does_not_rescue_a_lexicalised_particle(self):
+        # ⚠️ **THE COUNTERWEIGHT, AND THE WHOLE REASON THE RULE IS A TEMPLATE TEST.** These three
+        # were endorsed by the judges as correctly unmapped, and every one of them would come back
+        # under the obvious guard — a shared consonant skeleton — which is why that guard was
+        # measured and rejected: it recovers ~38k corpus mass and loses ~130k.
+        rows = table("ar")
+        for word in ["كما", "لن", "أبو", "قد", "هي", "أمس", "أحد", "أول"]:
+            with self.subTest(word=word):
+                self.assertIsNone(rows.get(word), f"{word} is a citation form, filed under {rows.get(word)!r}")
 
 
 class ArabicRulesAreArabicOnly(unittest.TestCase):

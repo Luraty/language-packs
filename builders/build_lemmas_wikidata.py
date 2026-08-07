@@ -85,6 +85,60 @@ def leipzig_counts(paths: list[Path], normalize) -> dict[str, int]:
 WEAK = frozenset("اويىة")
 
 
+# Derivational prefixes that a maṣdar or participle carries and its verb does not.
+PARTICIPLE_SUFFIXES = ("ا", "ين", "ون", "ات", "ان")
+
+
+def is_participle(word: str) -> bool:
+    """Does the word wear one of Arabic's two participle templates?
+
+    `مفعِّل` — an م prefix — and `فاعل`, whose ا sits second. Both are four letters or more. This is
+    a template test, not a lexicon lookup: it says the SHAPE is derivational, which is all the
+    caller needs to know before refusing to call the word a citation form.
+    """
+    return len(word) >= 4 and (word.startswith("م") or word[1:2] == "ا")
+
+
+def derives_from(form: str, base: str) -> bool:
+    """Is `form` a regular derivation of `base`, rather than a word that merely resembles it?
+
+    ⚠️ **THIS EXISTS BECAUSE A FREQUENCY RATIO CANNOT TELL THE TWO APART, AND NEITHER CAN A ROOT
+    SKELETON.** `قائلا` is 198x commoner than `قائل` and `كما` is 35x commoner than `كم`; both
+    pairs share a consonant skeleton. The first is an accusative ḥāl and must stay mapped, the
+    second is a lexicalised particle that must not. The difference is not statistical — it is that
+    Arabic derivation runs on TEMPLATES, and a template is a string test.
+
+    Two templates, both INFLECTIONS of a participle:
+
+        قائلا      ← قائل     accusative ا (the ḥāl)
+        المتمردين  ← متمرد    sound plural, with or without the article
+
+    ⚠️ **A MAṢDAR IS NOT HERE, AND IT WAS TRIED.** `استهلاك ← استهلك` (form X, ا before the final
+    radical) and `تعزيز ← عزز` (form II تفعيل) were implemented and put to a blind held-out A/B of
+    60 rows, three judges. They were **refuted 15:40 — preferred in 27%** — and the reason was
+    unanimous across framings: a maṣdar is its own DICTIONARY HEADWORD, not an inflection of its
+    verb. `اتحاد` ("union"), `احترام` ("respect"), `اختبار` ("test"), `استطلاع` ("poll") are nouns
+    a learner meets as nouns, and filing them under `اتحد`, `احترم`, `اختبر`, `استطلع` credits a
+    verb she has not read.
+    
+    The participle arm survived the same sample — `لافتا`, `مشددا`, `مشيدا`, `مستعينا`, `مستذكرا`,
+    `المتمردين`, `القاطنين` were all endorsed — and was independently endorsed by the earlier
+    sample in lughaty#205. Two disjoint samples agreeing is why this half stayed.
+
+    ⚠️ The templates come from the morphology rather than from fitting; the SPLIT between the two
+    arms came from the validation, which is model selection on a validation set and is recorded as
+    such in ADR-0034 rather than presented as a clean held-out number.
+    """
+    # The article rides on the derived form, never on the citation form.
+    if form.startswith("ال") and len(form) > 3:
+        form = form[2:]
+    if is_participle(base):
+        for suffix in PARTICIPLE_SUFFIXES:
+            if form == base + suffix:
+                return True
+    return False
+
+
 def skeleton(word: str) -> str:
     """The consonants of a word, with the vowel letters removed."""
     return "".join(c for c in word if c not in WEAK)
@@ -407,6 +461,12 @@ def main(argv: list[str]) -> int:
             explained = any(form.startswith(c) and len(form) > len(c) + 1
                             and skeleton(form[len(c):]) == skeleton(likely)
                             for c in PROCLITICS)
+            # ⚠️ **AND A TEMPLATE EXPLAINS A RATIO TOO.** A maṣdar or a participle is routinely
+            # commoner than the verb it is built on — `قائلا` is 198x `قائل` — so the ratio is
+            # evidence of nothing on its own. Measured in lughaty#209: without this the rule unmaps
+            # قائلا, مؤكدا, مضيفا, مبينا, تعزيز, استهلاك and استرجاع, which is 12.7% of a held-out
+            # sample made worse.
+            explained = explained or derives_from(form, likely)
             if (not explained
                     and counts.get(form, 0) > RARITY_UNLISTED * max(1, counts.get(likely, 0))):
                 blocked.append((form, ["unlisted and far commoner than every candidate"]))
@@ -536,24 +596,19 @@ def main(argv: list[str]) -> int:
     # reads `والذي` as وال+ذي and lands back on the rare `ذي`; comparing stems gives و+الذي and the
     # right answer. The two orderings disagree on exactly the words this pass exists to rescue.
     #
-    # ⚠️ **AND IT CARRIES A FREQUENCY FLOOR, BECAUSE THE UNBOUNDED VERSION WALKS INTO A HERMES
-    # CEILING.** Joining every attested proclitic form adds 106,974 rows and takes the table to
-    # 192,159 — and `parseLemmas` materialises the whole table as own properties on ONE plain
-    # object, which Hermes caps at **196,607** (measured; engine/docs/guides/benchmarking.md). That
-    # is 2.3% of headroom on a hard ceiling, on the runtime React Native actually ships and the one
-    # Node cannot show you. The next corpus refresh would crash the app on device with every test
-    # green.
+    # ⚠️ **THIS USED TO CARRY A FREQUENCY FLOOR OF 10, AND THE FLOOR WAS A TYPE BUG.** Joining every
+    # attested form takes the table to 192,159 rows, and `parseLemmas` used to materialise it as own
+    # properties on ONE plain object — which **Hermes caps at 196,607** (measured;
+    # engine/docs/guides/benchmarking.md). 2.3% of headroom on the runtime React Native ships and
+    # the one no lane here can test, since they all run on Node. The floor held it at 116,843 and
+    # cost 3.8% of the recovered corpus mass (lughaty#206, ADR-0033).
     #
-    # The floor costs almost nothing because `frequency.txt` cuts off at 219 occurrences: a row for
-    # a form seen 5 times in 20M tokens cannot affect ranking, introduction or coverage — it only
-    # decides what happens if a learner taps that exact string. At 10 the join keeps **96.2% of the
-    # corpus mass it recovers** for 31,658 rows instead of 106,974, and the table lands at 116,843,
-    # 59% of the cap.
-    CLITIC_FLOOR = int(os.environ.get("CLITIC_FLOOR", "10"))
+    # `PackData.lemmas` now accepts a `ReadonlyMap`, which has no such limit, and the packs build
+    # one directly (lughaty#210). The ceiling is gone and so is the floor.
     clitic_stem_joined = 0
     if script == "arabic":
         for form in counts:
-            if form in lexicon or form in mapping or counts.get(form, 0) < CLITIC_FLOOR:
+            if form in lexicon or form in mapping:
                 continue
             best = None
             for clitic in PROCLITICS:
