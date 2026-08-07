@@ -41,6 +41,7 @@ https://dumps.wikimedia.org/wikidatawiki/entities/latest-lexemes.json.gz
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from collections import defaultdict
@@ -75,6 +76,18 @@ def leipzig_counts(paths: list[Path], normalize) -> dict[str, int]:
                     continue
     return counts
 
+
+
+# Matres lectionis and the feminine ending: the letters that spell a vowel rather than a consonant,
+# so two forms that differ only in these are one root wearing two skeletons. ⚠️ Hamza-carrying
+# letters are deliberately NOT here — see the self-lexeme guard, where folding them in collapses
+# أمس ("yesterday") onto ماس ("diamond") and loses the clearest error the rule catches.
+WEAK = frozenset("اويىة")
+
+
+def skeleton(word: str) -> str:
+    """The consonants of a word, with the vowel letters removed."""
+    return "".join(c for c in word if c not in WEAK)
 
 
 def resolve(mapping: dict[str, str], counts: dict[str, int]) -> tuple[int, int]:
@@ -130,6 +143,28 @@ def main(argv: list[str]) -> int:
     # Wikidata lexical categories. Only the three open classes matter here — see the guard below.
     NOUN, VERB, ADJECTIVE = "Q1084", "Q24905", "Q34698"
     CONTENT = {NOUN, VERB, ADJECTIVE}
+    # ⚠️ THE FUNCTION-WORD CLASSES, WHICH ARE THE MIRROR OF `CONTENT` AND EXIST FOR THE SAME REASON.
+    # Pronoun, particle, adverb, adposition, conjunction, determiner, interjection — the closed
+    # classes. A pronoun is never an inflection of a noun, so a form that heads one must not be
+    # filed under a content word. Ids taken from the Arabic dump itself rather than guessed:
+    # Q468801 pronoun (هي، أنا), Q184943 particle (قد), Q380057 adverb (هنا), Q4833830 adposition
+    # (حوالي), plus the rarer closed classes that appear in the same data.
+    FUNCTION = {"Q468801", "Q184943", "Q380057", "Q4833830", "Q36484", "Q576271", "Q1401131"}
+    # Longest first, so وال is tested before و.
+    PROCLITICS = ("وال", "بال", "فال", "كال", "لل", "ال", "و", "ب", "ل", "ف", "ك", "س")
+    # ⚠️ **THE FOUR RULES BELOW RUN FOR ARABIC ONLY, AND THAT IS A LIMIT ON THE EVIDENCE RATHER
+    # THAN ON THE IDEA.** Two of them — the function-word guard and the self-lexeme rule — are
+    # stated in language-neutral terms and would fire on German unchanged. Every guard that keeps
+    # them honest is not: the proclitic list is Arabic, and `skeleton()` strips Arabic matres, so
+    # on German `skeleton(a) == skeleton(b)` degenerates to `a == b` and the guard never speaks.
+    # Turning them loose on German would mean shipping the rules with their brakes removed, on a
+    # pack whose error rate nobody has adjudicated. The German Wikidata dump is not even fetched on
+    # this machine, so there is no A/B to run.
+    #
+    # Doing this properly for German means the same protocol: sample, adjudicate, measure, and
+    # write the German-shaped guards (separable prefixes, umlaut, the -en/-e paradigm). Until then
+    # the German table is byte-identical, which is checked in `test_lemmas.py`.
+    tiebreak_rules = script == "arabic"
 
     candidates: dict[str, set[tuple[str, str]]] = defaultdict(set)
     own_categories: dict[str, set[str]] = defaultdict(set)
@@ -156,6 +191,9 @@ def main(argv: list[str]) -> int:
     rows: list[tuple[str, str]] = []
     ambiguous: list[tuple[str, str, list[str]]] = []
     blocked: list[tuple[str, list[str]]] = []
+    # Forms that head their own lexeme and outrank every candidate — their own citation form. Kept
+    # so no later pass can re-map one; see both comments below.
+    self_lemma: set[str] = set()
     # form → every lemma Wikidata offered for it, for the rows where there was more than one.
     also: dict[str, list[str]] = {}
     for form in sorted(candidates):
@@ -210,6 +248,19 @@ def main(argv: list[str]) -> int:
         # tuned constant — if a future language puts real mappings above it, the gap is the thing to
         # re-measure, not the number to nudge.
         RARITY_LIMIT = 200
+        # ⚠️ THE TWO SELF-LEXEME THRESHOLDS. Both overridable so the sweeps that chose them can be
+        # re-run; neither is a tuned peak, and the comments at their use sites say why.
+        #
+        #   SELF_RARITY_LIMIT — the form is a lemma in Wikidata, so "commoner than its candidate"
+        #     is enough. 1x is the END of the scale, not a fitted value: swept 1/2/4/6x, monotone,
+        #     zero regressions at every setting against 145 adjudicated decisions.
+        #   RARITY_UNLISTED — Wikidata has not listed the form, so frequency is the only evidence
+        #     and the bar is much higher. Swept 10/20/50/100x: the adjudicated score is FLAT across
+        #     them (87, 88, 87, 87 of 145), so this is a plateau and the adjudicated set does not
+        #     choose. It was chosen on the HEAD of the distribution instead, where 20x removes
+        #     كما→كم (89,288x), يجب→أجاب, النقد→قد and أبو→أبى that 50x leaves in.
+        SELF_RARITY_LIMIT = float(os.environ.get("SELF_RARITY_LIMIT", "1"))
+        RARITY_UNLISTED = float(os.environ.get("RARITY_UNLISTED", "20"))
         options = [
             (lem, cat) for lem, cat in options
             if counts.get(form, 0) <= RARITY_LIMIT * max(1, counts.get(lem, 0))
@@ -218,7 +269,156 @@ def main(argv: list[str]) -> int:
             blocked.append((form, ["all candidates far rarer than the form itself"]))
             continue
 
+        # ⚠️ **THERE IS NO CLITIC-INVERSION RULE HERE, AND THE REASON IS WORTH THE PARAGRAPH.**
+        # "A citation form never carries a proclitic, so a candidate that is exactly
+        # `proclitic + form` cannot be its lemma" looks airtight, and it was written, measured and
+        # deleted. It is FALSE for Arabic, because و is not only the conjunction — it is the first
+        # radical of a whole productive verb class. Assimilated (مثال) verbs drop it in the
+        # imperfect and the imperative, so `proclitic + form` is exactly what a correct assignment
+        # looks like:
+        #
+        #     قف   → وقف     the imperative of "to stop"
+        #     صف   → وصف     "describe!"
+        #     يهبوا → وهب    an imperfect of "to give"
+        #     ينذر  → وذر    an imperfect of "to leave"
+        #
+        # Enforcing the rule moved 550 rows and re-pointed those paradigms at whatever else shared
+        # a skeleton — `ينذر` landed on ذروة, "summit". It also fixed nothing: its motivating cases,
+        # قد→وقد and هي→وهي, are a particle and a pronoun, which the function-word guard below
+        # already refuses to file under a verb. Measured with and without, on the adjudicated set:
+        # 87/145 against 86/145, inside the noise, against 550 rows of real damage.
+        #
+        # `PROCLITICS` survives because the unlisted-form guard further down uses it for something
+        # different and defensible: deciding whether a frequency RATIO is explained by an article.
+
+        # ⚠️ **FUNCTION-WORD PROTECTION — THE MIRROR OF THE CONTENT-WORD GUARD ABOVE.** That guard
+        # stops a noun swallowing a verb. This stops a noun or a verb swallowing a PRONOUN or a
+        # PARTICLE, which the first guard deliberately allowed through so that article and pronoun
+        # paradigms could still merge (`das → der`). Arabic pays for that allowance at the head of
+        # its list: نحن ("we") under حان ("the time came"), هنا ("here") under وهن ("weakness").
+        #
+        # A closed-class word is not an inflection of an open-class one, in any language. Narrow on
+        # purpose: it only refuses CONTENT candidates, so a pronoun may still merge into another
+        # pronoun's paradigm.
+        if tiebreak_rules and own_categories.get(form, set()) & FUNCTION:
+            options = [(lem, cat) for lem, cat in options if cat not in CONTENT]
+
+        if not options:
+            blocked.append((form, ["clitic inversion or function-word guard removed every candidate"]))
+            continue
+
         lemmas = sorted({lem for lem, _ in options})
+
+        # ⚠️ **SELF-LEXEME RARITY — THE SHARPER QUESTION THE 200× GUARD CANNOT ASK.**
+        #
+        # `RARITY_LIMIT` asks "is this target absurdly rarer than the form?" and lets anything
+        # inside three orders of magnitude through. That is the right question for a form with no
+        # opinion of its own. It is the wrong question for a form that HEADS ITS OWN LEXEME: such a
+        # word is already a citation form, and if it is also commoner than the thing it is about to
+        # be filed under, the corpus is telling you which reading it contains.
+        #
+        #     أمس  (27,208x) → ماس    "yesterday" filed under "diamond"
+        #     أحد  (26,924x) → حد     "one/someone" under "limit"
+        #     أول  (20,305x) → آل     "first" under "clan"
+        #     حال  (12,372x) → حلا    "state" under "to be sweet"
+        #
+        # ⚠️ **AND IT MUST NOT FIRE ON A GENUINE INFLECTION THAT HAPPENS TO BE A LEXEME.** يتم is a
+        # real verb ("to be orphaned") AND the imperfect of تم; تكون, تعمل, تصدر are the same shape.
+        # Every one of them is RARER than its target, so the comparison leaves them alone. That
+        # asymmetry is the whole reason the rule is stated as a ratio against the chosen candidate
+        # rather than as "heads its own lexeme ⇒ never map", which was measured and breaks them.
+        #
+        # ⚠️ **DROPPING THE ROW ALSO TERMINATES EVERY CHAIN THAT RAN THROUGH IT, AND THAT IS
+        # CORRECT RATHER THAN INCIDENTAL.** `resolve()` treats the mapping as transitive, so a
+        # form that is absent from it is a terminus:
+        #
+        #     shipped   يخوض → خوض → خاض   flattens to   يخوض → خاض
+        #     with R5   خوض is a lemma     leaves        يخوض → خوض
+        #
+        # Deferring the deletion until after flattening was measured as the alternative and is
+        # WRONG for the same reason it looks safe: it keeps the edge, so `الأمس` flattens through
+        # `أمس` to `ماس` — the very error the rule exists to stop. "Is this form a citation form?"
+        # and "does a chain stop here?" are one question, and both halves must get the same answer.
+        # On the adjudicated set: terminate 93/145 correct, defer 75/145.
+        #
+        # ⚠️ **THE SKELETON GUARD IS WHAT KEEPS IT HONEST, AND IT HAS A DIRECTION.** Terminating
+        # alone regressed ten forms in seven families, all one shape — the form and its candidate
+        # differ ONLY in weak letters (matres lectionis and the feminine ة):
+        #
+        #     خوض/خاض  دور/دار  ميل/مال      a masdar and its hollow verb, same root
+        #     فرنسية/فرنسي  ثانية/ثان  خاصة/خاص   a feminine and its masculine
+        #     سوريا/سوري                     a country and its nisba
+        #
+        # One lexeme wearing two vowel skeletons, and Wikidata lists both as lemmas — which is
+        # exactly the condition this rule keys on, so it fires on all of them. The genuine errors
+        # do not have the shape: أمس[أمس] vs ماس[مس], أحد[أحد] vs حد[حد], نحن[نحن] vs حان[حن] all
+        # differ in their CONSONANTS. ⚠️ Hamza stays a consonant on purpose — folding it into the
+        # weak set collapses أمس onto ماس and loses the clearest fix the rule has.
+        #
+        # ⚠️ **BUT A SYMMETRIC GUARD IS WRONG, BECAUSE THE ة PAIR IS NOT SYMMETRIC.** The feminine
+        # is derived from the masculine, so the masculine is the citation form and the direction
+        # decides who is right:
+        #
+        #     خاصة → خاص     the form is the feminine       R5 must NOT fire
+        #     شعب  → شعبة    the form is the masculine      R5 SHOULD fire (الشعب, 20,985x)
+        #
+        # A symmetric guard suppressed both and gave back nine head-of-list fixes — الشعب→شعبة,
+        # الحكم→حكمة, يتم→تام, ليست→لاس — to prevent four.
+        #
+        # ⚠️ **AND A NOUN IS NOT ANYONE'S FEMININE.** جمهورية ("republic") is a noun that merely
+        # looks like the feminine of the adjective جمهوري; so are محكمة, محافظة, مقاومة, مؤسسة —
+        # every one of them a head-of-list word. The suppression therefore only applies when both
+        # sides are the same part of speech. Where they differ, they are two lexemes and the rule
+        # stands.
+        # ⚠️ **THE SAME CLAIM, FOR THE FORMS WIKIDATA HAS NOT GOT ROUND TO LISTING.** The rule below
+        # needs `form in own_categories` — Wikidata must already call the form a lemma. That
+        # precondition is about the lexicon's COVERAGE, not about the form, and at the head of the
+        # list the gap is expensive:
+        #
+        #     أنه  (89,256x) → أنهى (759x)   "that he" filed under "to finish"    117x
+        #     يجب  (24,162x) → أجاب (713x)   "must" under "to answer"              34x
+        #
+        # Neither is listed as an Arabic lemma, so the rule below cannot speak, and the frequency
+        # tiebreak files a top-20 word under a word 100 times rarer. The shipped table escapes
+        # `أنه` only by accident: its chain happened to wander somewhere rare enough for the final
+        # 200x sweep to delete the whole row, and terminating chains stops that accident happening.
+        #
+        # ⚠️ **A LARGE RATIO IS THE EVIDENCE, AND IT HAS TO BE LARGE.** A real inflection is
+        # routinely commoner than its citation form — that is why the rule below uses 1x only when
+        # the lexicon has independently confirmed the form is a lemma. With no such confirmation
+        # the bar is `RARITY_UNLISTED`, swept and set at the value below.
+        # ⚠️ **AND A PROCLITIC EXPLAINS THE RATIO, SO IT IS NOT EVIDENCE.** In newswire an
+        # ال-prefixed form is routinely 20-50x commoner than its bare lemma — الثاني 18,628x
+        # against ثان 614x — which is the ال-join working, not a wrong assignment. A bare ratio
+        # test condemns exactly the forms that pass already: الثاني→ثان, الأوروبي→أوروبي,
+        # اللازمة→لزم, الإسلامية→إسلامي, المتعلقة→متعلق. So the arm stands down whenever stripping
+        # a known proclitic leaves something with the candidate's consonant skeleton.
+        #
+        # It still fires where the candidate is NOT what the strip produces, which is where the
+        # errors live: النقد ("criticism", 5,703x) filed under the particle قد, العدوان under عدو,
+        # الإنسان under أنس.
+        if tiebreak_rules and form not in own_categories and lemmas:
+            likely = max(lemmas, key=lambda lem: (counts.get(lem, 0), [-ord(c) for c in lem]))
+            explained = any(form.startswith(c) and len(form) > len(c) + 1
+                            and skeleton(form[len(c):]) == skeleton(likely)
+                            for c in PROCLITICS)
+            if (not explained
+                    and counts.get(form, 0) > RARITY_UNLISTED * max(1, counts.get(likely, 0))):
+                blocked.append((form, ["unlisted and far commoner than every candidate"]))
+                self_lemma.add(form)
+                continue
+
+        if tiebreak_rules and form in own_categories and lemmas:
+            likely = max(lemmas, key=lambda lem: (counts.get(lem, 0), [-ord(c) for c in lem]))
+            same_pos = bool(own_categories.get(form, set()) & own_categories.get(likely, set()))
+            derived_feminine = form.endswith("ة") and same_pos
+            variant = skeleton(form) == skeleton(likely) and not likely.endswith("ة")
+            if (counts.get(form, 0) > SELF_RARITY_LIMIT * max(1, counts.get(likely, 0))
+                    and not (variant and (derived_feminine or not form.endswith("ة")))):
+                blocked.append((form, ["heads its own lexeme and outranks every candidate"]))
+                self_lemma.add(form)
+                continue
+
         if len(lemmas) == 1:
             rows.append((form, lemmas[0]))
             continue
@@ -338,6 +538,12 @@ def main(argv: list[str]) -> int:
     for form in swept:
         del mapping[form]
 
+    # ⚠️ **A LATER PASS MUST NOT PUT BACK WHAT THE SELF-LEXEME RULE TOOK OUT.** The adjective pass,
+    # the clitic join and the overrides all add rows after the choice point, and each of them can
+    # re-map a form this rule declared to be its own citation form.
+    for form in self_lemma:
+        mapping.pop(form, None)
+
     rows = sorted(mapping.items())
 
     # ⚠️ **EXTRA COLUMNS, AND COLUMN ONE IS UNTOUCHED — THAT IS THE WHOLE SAFETY ARGUMENT.**
@@ -393,6 +599,7 @@ def main(argv: list[str]) -> int:
     print(f"  ...attested in the corpora:           {len(rows)}")
     print(f"  ...of which ambiguous:                {len(ambiguous)}")
     print(f"  blocked by the content-word guard:    {len(blocked)}")
+    print(f"  kept as their own lemma (self-lexeme): {len(self_lemma)}")
     # Build the lookup ONCE. Inlining `dict(rows)` into the generator's condition rebuilds a
     # 130k-entry dict on every one of the corpus's 544k distinct forms, which does not finish.
     mapped = {f for f, _ in rows}

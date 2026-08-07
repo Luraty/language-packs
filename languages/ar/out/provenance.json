@@ -5,14 +5,16 @@
   "⚠️": "First Arabic build in this repo. NOT a regeneration of the archived ar_lemma_zipf.csv from lughaty — that used CAMeL Tools, whose MSA morphology databases are GPL v2, and its vocalized column was database content rather than computation over the corpus. These files share no code and no lexicon with it and are not comparable.",
   "files": {
     "frequency.txt": {
-      "sha256": "edca4a5bce5e1e337813227741fad05df07ca66ddd9bcd6c0ca022366bdbb39c",
+      "sha256": "23fe434e601d1acefec2e05fda22a4ac31a448319e4451d3c71b00b46cc8a8ce",
       "rows": 10000,
-      "bytes": 114580
+      "bytes": 114026,
+      "note": "Rebuilt as a mechanical consequence of the new lemma table -- required, because the pack asserts every frequency entry keys to something in the vocabulary. Head unchanged (في من على أن إلى). ⚠️ الذي is still absent and ذي still sits at rank 14: that defect lives in the ال join, not here, and is lughaty#206."
     },
     "lemmas.tsv": {
-      "sha256": "50db1afef521e639ec8cfb5d57c0e274e2d8540aad004ce43e0f0122ca72b7a0",
-      "rows": 86910,
-      "bytes": 1902165
+      "sha256": "3f13c5139bb0a18bce7a653e39ccbb2306ee04a7c1c68fae812134a992b28428",
+      "rows": 85185,
+      "bytes": 1892188,
+      "note": "⚠️ REBUILT 2026-08-07 for lughaty#205 (lughaty ADR-0032). Four rules stop the frequency tiebreak filing a common word under an unrelated one: function-word protection, self-lexeme rarity (1x where Wikidata lists the form as a lemma, 20x where it does not), and chain termination at a form that is its own citation form. Measured end to end against the 145 adjudicated decisions from ADR-0031: 41.4% -> 59.3% correct, 35.2% -> 65.6% by corpus mass, 26 fixed and 0 regressed. Validated on a HELD-OUT blind A/B of 118 decisions drawn from rows NOT previously judged, three independent judges, old and new unlabelled: the rebuilt table preferred 91:15 (86%), consistent across head, middle and tail. 10,088 of 86,910 rows changed; 85,185 remain. Residual, measured and NOT fixed: 12.7% of held-out decisions are made worse, all masdars and accusative participles that the unlisted-form rule unmaps; the obvious guard recovers ~38k corpus mass and loses ~130k. Arabic script only -- the guards are Arabic and the German table is untouched."
     }
   },
   "method": {

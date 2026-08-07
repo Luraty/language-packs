@@ -22,6 +22,7 @@ rebuild that reintroduces any of these fails here even if every other check is g
 
 from __future__ import annotations
 
+import sys
 import unittest
 from pathlib import Path
 
@@ -248,6 +249,136 @@ class TableShape(unittest.TestCase):
                            .read_text("utf-8").split("\n") if w]
                 missing = [w for w in entries if w not in attested]
                 self.assertEqual(missing, [], f"{len(missing)} unattested: {missing[:10]}")
+
+
+class TiebreakGuards(unittest.TestCase):
+    """The four rules that stop the frequency tiebreak filing a common word under an unrelated one
+    — lughaty#205, lughaty ADR-0032.
+
+    Adjudication put the shipped table at 41.4% correct on its ambiguous decisions and this rule set
+    at 60.0%; by corpus mass, 35.2% to 65.6%. These tests do not re-measure that. They pin the
+    handful of behaviours that the measurement turned on, so that a future change to the builder has
+    to break a named assertion rather than quietly move a number nobody re-runs.
+    """
+
+    # Every one of these was filed under an unrelated word by the shipped table, and every one is
+    # in the top 60 of the Arabic frequency distribution. See the ADR for the full list.
+    OWN_LEMMA = {
+        "قد": "وقد", "هي": "وهى", "كما": "كم", "أمس": "ماس", "أحد": "حد", "أول": "آل",
+        "تحت": "حتى", "ضمن": "وضم", "أعلن": "على", "لن": "لان", "أكثر": "كثر", "عدد": "عدة",
+    }
+
+    def test_a_word_that_outranks_its_lemma_is_its_own_lemma(self):
+        rows = table("ar")
+        for word, was in self.OWN_LEMMA.items():
+            with self.subTest(word=word):
+                self.assertIsNone(
+                    rows.get(word),
+                    f"{word} is filed under {rows.get(word)!r}; it used to be {was!r} and it is a "
+                    f"citation form in its own right",
+                )
+
+    def test_an_assimilated_verb_keeps_its_waw(self):
+        # ⚠️ **THIS TEST EXISTS BECAUSE ITS OPPOSITE WAS WRITTEN FIRST AND WAS WRONG.** The rule
+        # "a lemma is never the form with a proclitic on the front" is true of و-the-conjunction and
+        # false of و-the-first-radical: assimilated (مثال) verbs drop it in the imperfect and the
+        # imperative, so `قف → وقف` is a correct assignment that looks exactly like a clitic error.
+        # Enforcing the structural rule moved 550 rows and put `ينذر` under ذروة ("summit").
+        rows = table("ar")
+        for form, lemma in [("قف", "وقف"), ("صف", "وصف"), ("يهبوا", "وهب"), ("ينذر", "وذر")]:
+            with self.subTest(form=form):
+                self.assertEqual(rows.get(form), lemma)
+
+    def test_a_pronoun_or_particle_is_never_filed_under_a_noun_or_a_verb(self):
+        # The mirror of the content-word guard. A closed-class word is not an inflection of an
+        # open-class one in any language, and Arabic pays for the allowance at the head of its list.
+        rows = table("ar")
+        # ⚠️ `نحن` ("we", 13,171x) is NOT here, and its absence is the honest part. It is still
+        # filed under حان ("the time came"). Wikidata does not list it as a lemma at all, so the
+        # guard has nothing to speak with, and at 10.8x it does not clear the unlisted-form bar of
+        # 20x either. Lowering that bar to catch it was measured and scores worse. See ADR-0032.
+        for word in ["هي", "هو", "هنا", "قد", "لن", "كما"]:
+            with self.subTest(word=word):
+                self.assertIsNone(rows.get(word), f"{word} is a function word, filed under {rows.get(word)!r}")
+
+    def test_the_definite_article_is_still_joined(self):
+        # ⚠️ THE COUNTERWEIGHT, AND THE REASON THE RULE SET NEEDED A PROCLITIC GUARD AT ALL. An
+        # ال-prefixed form is routinely 20-50x commoner than its bare lemma in newswire — الثاني
+        # 18,628x against ثان 614x — so a bare frequency test condemns exactly the joins that are
+        # correct. Without this test the rule set scores better on the errors and silently destroys
+        # the ال-join, which is most of what the table does.
+        rows = table("ar")
+        for form, lemma in [("الثاني", "ثان"), ("الأوروبي", "أوروبي"), ("اللازمة", "لزم"),
+                            ("الكتاب", "كتاب"), ("الحكومة", "حكومة")]:
+            with self.subTest(form=form):
+                self.assertEqual(rows.get(form), lemma)
+
+    def test_the_chain_terminates_at_a_word_that_is_its_own_lemma(self):
+        # `الأول` reached `آل` ("clan") by flattening through `أول`; terminating the chain at `أول`
+        # is the same claim as removing `أول`'s own row, and both halves must agree. The counterpart
+        # `أول` is checked above.
+        rows = table("ar")
+        self.assertEqual(rows.get("الأول"), "أول")
+        self.assertEqual(rows.get("الأولى"), "أول")
+
+    def test_the_self_lexeme_rule_actually_fires(self):
+        # ⚠️ VACUITY GUARD. Every assertion above is satisfied by a table with FEWER rows, so a
+        # builder that deleted half the file would pass them all. This is the floor in the other
+        # direction, and it is paired with `test_the_definite_article_is_still_joined` as the
+        # ceiling. Measured 1,651 self-lexeme rows and 85,162 total at the time of writing.
+        rows = table("ar")
+        self.assertGreater(len(rows), 80_000, "the table has lost rows wholesale")
+        self.assertLess(len(rows), 86_500, "the self-lexeme rule has stopped removing anything")
+
+
+class ArabicRulesAreArabicOnly(unittest.TestCase):
+    """⚠️ The tiebreak rules run for `--script arabic` and nothing else, and this is the test that
+    holds the gate shut.
+
+    Two of them — the function-word guard and the self-lexeme rule — are written in language-neutral
+    terms and would fire on German unchanged. Every guard that keeps them honest is Arabic: the
+    proclitic list, and `skeleton()`, which strips Arabic matres and so degenerates to string
+    equality on a Latin word. Letting them run on German would ship the rules with their brakes off,
+    against a table nobody has adjudicated.
+
+    ⚠️ This is a SYNTHETIC test on purpose. The German dump and corpora are not on every machine, so
+    an A/B of the real German table skips exactly where it is needed; a fixture always runs.
+    """
+
+    # `gab` is its own lemma AND far commoner than `geben`, which is precisely the self-lexeme
+    # rule's firing condition. Under `--script arabic` the row disappears. Under `--script latin`
+    # it must survive.
+    # ⚠️ THE RATIO IS 50x ON PURPOSE. The builder already had a 200x `RARITY_LIMIT` sweep before
+    # any of this, so a fixture at 500x is deleted by code that predates the change and the test
+    # passes for the wrong reason — which is exactly what the first version of this fixture did.
+    # 50x clears the unlisted bar of 20x and stays well under 200x, so only the new rule can fire.
+    WIKIDATA = "gab\tgeben\tQ24905\ngab\tgab\tQ24905\ngeben\tgeben\tQ24905\n"
+    WORDS = "1\tgab\t5000\n2\tgeben\t100\n"
+
+    def build(self, script):
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "wd.tsv").write_text(self.WIKIDATA, encoding="utf-8")
+            (d / "words.txt").write_text(self.WORDS, encoding="utf-8")
+            subprocess.run(
+                [sys.executable, str(ROOT / "builders" / "build_lemmas_wikidata.py"),
+                 str(d / "wd.tsv"), str(d / "words.txt"), "--script", script,
+                 "--out", str(d / "out.tsv")],
+                check=True, capture_output=True,
+            )
+            return {line.split("\t")[0]: line.split("\t")[1]
+                    for line in (d / "out.tsv").read_text("utf-8").split("\n") if "\t" in line}
+
+    def test_the_rules_fire_for_arabic(self):
+        # The control. If this stops firing the next test is vacuous and proves nothing.
+        self.assertIsNone(self.build("arabic").get("gab"),
+                          "the self-lexeme rule did not fire; the gate test below is now vacuous")
+
+    def test_the_rules_do_not_fire_for_latin(self):
+        self.assertEqual(self.build("latin").get("gab"), "geben",
+                         "an Arabic-only tiebreak rule fired on a Latin-script build")
 
 
 if __name__ == "__main__":
