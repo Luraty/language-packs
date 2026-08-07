@@ -153,6 +153,64 @@ class QuranicArabic(unittest.TestCase):
         self.assertGreater(sum(1 for k, v in uthmani.items() if k != v), 1000)
 
 
+class AlternateReadings(unittest.TestCase):
+    """Rows may list several lemmas, primary first — lughaty#177, lughaty ADR-0028.
+
+    ⚠️ **THE ONE RULE THAT MAKES THIS SAFE IS THAT COLUMN ONE NEVER MOVES.** The engine's
+    `candidates(s)[0] === key(s)` invariant means everything that addresses knowledge reads column
+    one, so extra columns can only ever add information. `test_column_one_is_unchanged` is the A/B
+    control for that; the rest are the ADR's conformance rules restated against the shipped file.
+    """
+
+    def rows(self, language="ar"):
+        out = []
+        path = ROOT / "languages" / language / "out" / "lemmas.tsv"
+        for line in path.read_text("utf-8").split("\n"):
+            parts = line.split("\t")
+            if len(parts) >= 2 and parts[0] and parts[1]:
+                out.append((parts[0], parts[1], [p for p in parts[2:] if p]))
+        return out
+
+    def test_alternates_are_never_the_primary_and_never_repeat(self):
+        # `candidates-repeat`: a learner cannot choose between two identical senses, so offering the
+        # choice is worse than not offering one.
+        for language in ("ar", "ar-x-quran", "de"):
+            with self.subTest(language=language):
+                bad = [f for f, l, alts in self.rows(language)
+                       if len(set([l, *alts])) != 1 + len(alts)]
+                self.assertEqual(bad, [], f"{len(bad)} rows repeat a reading, e.g. {bad[:5]}")
+
+    def test_every_alternate_is_canonical(self):
+        # `candidates-not-canonical`: a reading that keys onward means the learner who picks it is
+        # credited under an address no other route to that word produces — one word, two unit keys.
+        for language in ("ar", "ar-x-quran", "de"):
+            with self.subTest(language=language):
+                rows = self.rows(language)
+                primary = {f: l for f, l, _ in rows}
+                drifting = [(f, a) for f, _, alts in rows for a in alts
+                            if primary.get(a, a) != a]
+                self.assertEqual(drifting, [],
+                                 f"{len(drifting)} non-canonical alternates, e.g. {drifting[:5]}")
+
+    def test_no_alternate_is_empty_or_contains_a_tab(self):
+        # The shape `parseLemmas` on the consumer side relies on. It used to take everything after
+        # the FIRST tab, which turned a three-column row into a lemma containing a tab character.
+        for language in ("ar", "ar-x-quran", "de"):
+            with self.subTest(language=language):
+                bad = [f for f, l, alts in self.rows(language)
+                       if not l or any(not a for a in alts)]
+                self.assertEqual(bad, [], f"empty readings on {len(bad)} rows: {bad[:5]}")
+
+    def test_the_arabic_table_actually_carries_alternates(self):
+        # ⚠️ A VACUITY GUARD. Every assertion above passes trivially on a one-column file, which is
+        # exactly what this table was before lughaty#177 — so without this the whole class could go
+        # green against a build that emitted nothing new.
+        with_alts = [f for f, _, alts in self.rows("ar") if alts]
+        self.assertGreater(len(with_alts), 1000,
+                           f"only {len(with_alts)} rows carry an alternate reading; the multi-column "
+                           f"emission is not running and every check in this class is vacuous")
+
+
 class TableShape(unittest.TestCase):
     def test_no_unresolved_chains(self):
         # build-frequency does ONE lookup, so `a → b → c` files `a` under `b` while `b` files under

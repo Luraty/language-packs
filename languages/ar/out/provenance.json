@@ -1,7 +1,7 @@
 {
   "language": "ar",
   "generatedOn": "2026-07-30",
-  "recordedOn": "2026-07-30",
+  "recordedOn": "2026-08-07",
   "⚠️": "First Arabic build in this repo. NOT a regeneration of the archived ar_lemma_zipf.csv from lughaty — that used CAMeL Tools, whose MSA morphology databases are GPL v2, and its vocalized column was database content rather than computation over the corpus. These files share no code and no lexicon with it and are not comparable.",
   "files": {
     "frequency.txt": {
@@ -10,15 +10,16 @@
       "bytes": 114580
     },
     "lemmas.tsv": {
-      "sha256": "3da502878072acad820cf06d29a3ceeae60562d99730ae3a0078a78f503dd365",
+      "sha256": "50db1afef521e639ec8cfb5d57c0e274e2d8540aad004ce43e0f0122ca72b7a0",
       "rows": 86910,
-      "bytes": 1854397
+      "bytes": 1902165
     }
   },
   "method": {
     "frequency": "One pass. Counts from two Leipzig Arabic newswire corpora, summed onto lemmas, top 10,000. Keys not attested in the corpora as real surface forms are dropped. ara_wikipedia_2021_1M is excluded on purpose — CC BY-SA upstream.",
     "lemmatizer": "Wikidata Lexemes (CC0), Arabic Q13955, dump of 2026-07-29: 53,770 lexemes. Harakat, superscript alef and tatweel are stripped on BOTH sides so the diacritized lexicon joins the undiacritized corpus. The definite article ال is joined to its noun where the bare noun is already known (5,696 forms) — it is a proclitic, not a separate token, and it sits on 23.9% of Arabic tokens.",
-    "guards": "Same three as German plus one found here: a RARITY guard. Wikidata lists obscure lexemes whose paradigms contain very common strings, and a frequency tiebreak that only compares candidates against each other walks straight in — في (1,619,683×) was filed under وفى (511×), من (1,133,781×) under the given name منية (28×). A form is no longer mapped onto a lemma more than 200× rarer than itself. The threshold sits in a measured order-of-magnitude gap: correct German mappings top out at 58.7×, wrong ones start at 934×. It caught German errors too — heute→heuen, kosten→kosen."
+    "guards": "Same three as German plus one found here: a RARITY guard. Wikidata lists obscure lexemes whose paradigms contain very common strings, and a frequency tiebreak that only compares candidates against each other walks straight in — في (1,619,683×) was filed under وفى (511×), من (1,133,781×) under the given name منية (28×). A form is no longer mapped onto a lemma more than 200× rarer than itself. The threshold sits in a measured order-of-magnitude gap: correct German mappings top out at 58.7×, wrong ones start at 934×. It caught German errors too — heute→heuen, kosten→kosen.",
+    "alternates": "lughaty#177 / ADR-0031. A row may list several lemmas, tab-separated, primary first. The candidate set was always computed and printed by --report; it is now written. 5,092 of 86,910 rows (5.9%) carry one, 6,022 alternates in total, +47,768 bytes. ⚠️ COLUMN ONE IS BYTE-IDENTICAL to the 2026-07-30 build from the same dump — verified by building twice and diffing — so no unit key, coverage figure or schedule moves. Alternates are DROPPED rather than guessed wherever a later pass (chains, the clitic join, overrides, the final rarity sweep) re-pointed the primary, which is why 5,092 rows carry them and not all 13,834 ambiguous ones."
   },
   "measured": {
     "lemmaTable": {
@@ -28,6 +29,14 @@
     },
     "coverage": {
       "note": "⚠️ NOT MEASURED. No held-out Arabic evaluation has been run. Do not cite a coverage figure for Arabic until one is."
+    },
+    "ambiguity": {
+      "ambiguousRows": 13834,
+      "shareOfTable": 0.159,
+      "note": "⚠️ THE TIEBREAK IS WRONG ABOUT HALF THE TIME AND WORST AT THE HEAD, which is the opposite of what build_lemmas_wikidata.py's docstring claims. Measured 2026-08-07 on a stratified sample of 150 decisions, three independent adjudicators each under different framings, majority vote: head (census of the top 60) 51.7% wrong carrying 56.7% of that stratum's corpus mass; middle (40 of 940) 37.5%; tail (50 of 12,834) 42.0%. 13 of 150 contested. Examples: قد→وقد, هي→وهي, أمس→ماس (yesterday→diamond), أول→آل (first→clan), نحن→حان. Objective structural checks find only 40 of 13,834 (0.29%) — two orders of magnitude low, so an automatic check over this data is a smoke alarm and not a measurement."
+    },
+    "frequencyList": {
+      "note": "⚠️ NOT REBUILT, deliberately (ADR-0031). Of the top 1,000 entries: 776 are real lemmas, 128 have no inflections listed (function words plus coverage gaps), ~50 are unstripped proclitics (و ب ل ف بال وال) and ~16 are alef-hamza variants. ⚠️ SEPARATELY: الذي is ABSENT from the list — the ال join filed it under ذي, which absorbed its 152,834 occurrences and sits at RANK 16. A Wikidata-anchored proclitic guard is designed and measured (0/45 controls destroyed, against 12/20 for the naive remainder-is-known rule) and deliberately held until the tiebreak is fixed."
     }
   }
 }

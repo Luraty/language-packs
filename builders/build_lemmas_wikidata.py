@@ -156,6 +156,8 @@ def main(argv: list[str]) -> int:
     rows: list[tuple[str, str]] = []
     ambiguous: list[tuple[str, str, list[str]]] = []
     blocked: list[tuple[str, list[str]]] = []
+    # form → every lemma Wikidata offered for it, for the rows where there was more than one.
+    also: dict[str, list[str]] = {}
     for form in sorted(candidates):
         # Only forms the corpus actually contains can ever be looked up. Emitting the rest would
         # inflate the table with rows `rank()` can never reach.
@@ -224,6 +226,11 @@ def main(argv: list[str]) -> int:
         chosen = max(lemmas, key=lambda lem: (counts.get(lem, 0), [-ord(c) for c in lem]))
         rows.append((form, chosen))
         ambiguous.append((form, chosen, lemmas))
+        # ⚠️ **THE CANDIDATE SET IS KEPT, NOT JUST REPORTED.** It was computed here, printed by
+        # `--report`, and thrown away — so 13,834 of 86,910 Arabic rows (15.9%) recorded a silent
+        # choice with no trace in the output. lughaty ADR-0028 gave the pack format somewhere to put
+        # them; this is the line that fills it.
+        also[form] = lemmas
 
     # ⚠️ FLATTEN CHAINS AND BREAK CYCLES. build-frequency does ONE lookup per surface form
     # (`lemmaOf.get(surface) ?? surface`), so an unresolved chain `a → b → c` files `a` under `b`
@@ -333,8 +340,48 @@ def main(argv: list[str]) -> int:
 
     rows = sorted(mapping.items())
 
+    # ⚠️ **EXTRA COLUMNS, AND COLUMN ONE IS UNTOUCHED — THAT IS THE WHOLE SAFETY ARGUMENT.**
+    #
+    # lughaty ADR-0028: a pack row may list several lemmas, primary first, and the engine's
+    # `candidates(s)[0] === key(s)` invariant means everything that reads `key` reads column one. So
+    # this loop may only ever APPEND. Verified by the A/B harness in `test_lemmas.py`, which builds
+    # with and without the alternates from the same dump and requires column one to be identical.
+    #
+    # Three conditions, each of which drops the alternates rather than risking a wrong one:
+    #
+    #   1. **The primary must still be one of the recorded candidates.** Chain flattening, the
+    #      clitic join, the overrides and the final rarity sweep all run AFTER the choice was made
+    #      and can re-point a form. If they did, the recorded set no longer describes this row and
+    #      the honest output is one column.
+    #   2. **Every alternate is resolved through the finished mapping.** A candidate that is itself
+    #      a form filed elsewhere is not canonical, and ADR-0028's `candidates-not-canonical` check
+    #      exists because offering one means the learner who picks it is credited under an address
+    #      no other route to that word produces.
+    #   3. **Deduped, primary excluded.** `candidates-repeat` — a learner cannot choose between two
+    #      identical senses.
+    def alternates(form: str, primary: str) -> list[str]:
+        listed = also.get(form)
+        if not listed or primary not in listed:
+            return []
+        out_alts: list[str] = []
+        for lemma in listed:
+            canonical = mapping.get(lemma, lemma)
+            if canonical == primary or canonical in out_alts or not canonical:
+                continue
+            out_alts.append(canonical)
+        return out_alts
+
+    with_alternates = 0
+    lines = []
+    for f, l in rows:
+        alts = alternates(f, l)
+        if alts:
+            with_alternates += 1
+        lines.append("\t".join([f, l, *alts]) + "\n")
+
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("".join(f"{f}\t{l}\n" for f, l in rows), encoding="utf-8")
+    out.write_text("".join(lines), encoding="utf-8")
+    print(f"  rows carrying alternate readings:     {with_alternates}")
     print(f"  clitic forms joined (ar):             {clitics_joined}")
     print(f"  swept by the final rarity check:      {len(swept)}")
     print(f"  adjective forms generated:            {generated}")
