@@ -5,16 +5,16 @@
   "⚠️": "First Arabic build in this repo. NOT a regeneration of the archived ar_lemma_zipf.csv from lughaty — that used CAMeL Tools, whose MSA morphology databases are GPL v2, and its vocalized column was database content rather than computation over the corpus. These files share no code and no lexicon with it and are not comparable.",
   "files": {
     "frequency.txt": {
-      "sha256": "23fe434e601d1acefec2e05fda22a4ac31a448319e4451d3c71b00b46cc8a8ce",
+      "sha256": "906a470d4c910d1cc10569d54ee972c4bd47c115b5f414e590d833b440e3f193",
       "rows": 10000,
-      "bytes": 114026,
-      "note": "Rebuilt as a mechanical consequence of the new lemma table -- required, because the pack asserts every frequency entry keys to something in the vocabulary. Head unchanged (في من على أن إلى). ⚠️ الذي is still absent and ذي still sits at rank 14: that defect lives in the ال join, not here, and is lughaty#206."
+      "bytes": 112566,
+      "note": "Rebuilt with the lemma table. ✅ الذي is now at RANK 16 (was absent entirely), ذي falls from rank 14 to 2,348, التي is unmoved at 7, and the 11 clitic forms in the old top 200 are gone. Head unchanged: في من على أن إلى. Cut-off 215 occurrences. Alef-hamza variants (الى/إلى) remain and are deliberately a separate decision -- folding alef in normalize was tried and broke key idempotency."
     },
     "lemmas.tsv": {
-      "sha256": "3f13c5139bb0a18bce7a653e39ccbb2306ee04a7c1c68fae812134a992b28428",
-      "rows": 85185,
-      "bytes": 1892188,
-      "note": "⚠️ REBUILT 2026-08-07 for lughaty#205 (lughaty ADR-0032). Four rules stop the frequency tiebreak filing a common word under an unrelated one: function-word protection, self-lexeme rarity (1x where Wikidata lists the form as a lemma, 20x where it does not), and chain termination at a form that is its own citation form. Measured end to end against the 145 adjudicated decisions from ADR-0031: 41.4% -> 59.3% correct, 35.2% -> 65.6% by corpus mass, 26 fixed and 0 regressed. Validated on a HELD-OUT blind A/B of 118 decisions drawn from rows NOT previously judged, three independent judges, old and new unlabelled: the rebuilt table preferred 91:15 (86%), consistent across head, middle and tail. 10,088 of 86,910 rows changed; 85,185 remain. Residual, measured and NOT fixed: 12.7% of held-out decisions are made worse, all masdars and accusative participles that the unlisted-form rule unmaps; the obvious guard recovers ~38k corpus mass and loses ~130k. Arabic script only -- the guards are Arabic and the German table is untouched."
+      "sha256": "ef722613bb4fe6419ae7daf560e8dd4046ab998a60ad1cd7cec590c73295aeab",
+      "rows": 116820,
+      "bytes": 2605620,
+      "note": "⚠️ REBUILT 2026-08-07 for lughaty#205 (lughaty ADR-0032). Four rules stop the frequency tiebreak filing a common word under an unrelated one: function-word protection, self-lexeme rarity (1x where Wikidata lists the form as a lemma, 20x where it does not), and chain termination at a form that is its own citation form. Measured end to end against the 145 adjudicated decisions from ADR-0031: 41.4% -> 59.3% correct, 35.2% -> 65.6% by corpus mass, 26 fixed and 0 regressed. Validated on a HELD-OUT blind A/B of 118 decisions drawn from rows NOT previously judged, three independent judges, old and new unlabelled: the rebuilt table preferred 91:15 (86%), consistent across head, middle and tail. 10,088 of 86,910 rows changed; 85,185 remain. Residual, measured and NOT fixed: 12.7% of held-out decisions are made worse, all masdars and accusative participles that the unlisted-form rule unmaps; the obvious guard recovers ~38k corpus mass and loses ~130k. Arabic script only -- the guards are Arabic and the German table is untouched. ALSO REBUILT 2026-08-07 for lughaty#206 (lughaty ADR-0033): never take apart a word the lexicon lists. The ال join now skips a form Wikidata calls a LEMMA, which recovers الذي (152,834x, was stripped to the rare ذي and absent from the frequency list); و ب ل ف ك are joined for the first time, guarded by the whole Wikidata lexicon rather than by \"the remainder is a known word\" -- 0 of 45 controls destroyed against 12 of 20 for the naive rule, 61 top-1,000 joins, 1,105,705 tokens. The strip is chosen by the commonest stem, not the longest clitic, so والذي gives الذي rather than ذي. ⚠️ A frequency floor of 10 caps the join: unfloored it reaches 192,159 rows against a MEASURED Hermes cap of 196,607 own properties on a plain object, which is what the pack builds. The floor keeps 96.2% of the recovered mass for 31,678 rows instead of 106,974."
     }
   },
   "method": {

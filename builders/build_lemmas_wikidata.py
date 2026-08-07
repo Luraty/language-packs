@@ -168,6 +168,7 @@ def main(argv: list[str]) -> int:
 
     candidates: dict[str, set[tuple[str, str]]] = defaultdict(set)
     own_categories: dict[str, set[str]] = defaultdict(set)
+    lexicon: set[str] = set()
     for line in wikidata_file.read_text("utf-8").split("\n"):
         parts = line.split("\t")
         if len(parts) >= 3 and parts[0] and parts[1]:
@@ -181,6 +182,10 @@ def main(argv: list[str]) -> int:
             if lemma.startswith("-") or lemma.endswith("-"):
                 continue
             own_categories[lemma].add(category)
+            # Every string Wikidata calls an Arabic word, lemma or inflection. The proclitic join
+            # below uses it as its one guard: never take apart something the lexicon contains.
+            lexicon.add(form)
+            lexicon.add(lemma)
             # An identity row carries no information: build-frequency falls back to the surface
             # form anyway when the table has no entry.
             if form != lemma:
@@ -498,11 +503,70 @@ def main(argv: list[str]) -> int:
     if script == "arabic":
         known = set(mapping) | set(mapping.values()) | set(own_categories)
         for form in counts:
+            # ⚠️ **NEVER TAKE APART A WORD THE LEXICON LISTS AS A HEADWORD.** `الذي` — one of the
+            # commonest words in Arabic, 152,834× — was stripped to `ذي`, a rare form of `ذو`
+            # (2,236×), which then absorbed all of it and sat at RANK 16 of the frequency list. A
+            # learner was taught `ذي` as the sixteenth most important Arabic word and never taught
+            # `الذي` at all. The feminine `التي` is a headword too and happens to have no row, which
+            # is why it sat correctly at rank 8 and nobody noticed the asymmetry.
+            #
+            # The guard is "is it a LEMMA", not "is it a form": `الكتاب` and `الثاني` are both
+            # Wikidata *forms*, and joining those is the entire point of this pass.
+            if form in own_categories:
+                continue
             if form.startswith("ال") and len(form) > 3 and form not in mapping:
                 stem = form[2:]
                 if stem in known and stem != form:
                     mapping[form] = mapping.get(stem, stem)
                     clitics_joined += 1
+
+    # ⚠️ **THE SINGLE-LETTER PROCLITICS, WHICH THE `ال` RULE'S OWN GUARD CANNOT SAFELY CARRY.**
+    # و ب ل ف ك attach the same way and cost more: `وقال`, `وأضاف`, `بشكل`, `بسبب` are all in the
+    # top 200 and none of them merges with its bare form. But "strip when the remainder is a known
+    # word" is CATASTROPHIC here — Arabic's root system means almost any 2-3 letter remainder is
+    # also a word, so `كان` (was) reads as ك+ان, `لجنة` (committee) as ل+جنة, `فقط` (only) as ف+قط,
+    # `بحث` (research) as ب+حث. Measured: 12 of 20 control words destroyed.
+    #
+    # Anchoring to the lexicon instead — never take apart a form Wikidata lists AT ALL, as a lemma
+    # or as anyone's inflection — fixes it: **0 of 45 controls destroyed**, 61 joins in the top
+    # 1,000, 1,105,705 tokens rejoined. The existing `RARITY_LIMIT` on the stem removes the
+    # remainder cases (`وكالة → كالة`, `فيما → يما`).
+    #
+    # ⚠️ **AND THE STRIP IS CHOSEN BY THE COMMONEST STEM, NOT THE LONGEST CLITIC.** Longest-first
+    # reads `والذي` as وال+ذي and lands back on the rare `ذي`; comparing stems gives و+الذي and the
+    # right answer. The two orderings disagree on exactly the words this pass exists to rescue.
+    #
+    # ⚠️ **AND IT CARRIES A FREQUENCY FLOOR, BECAUSE THE UNBOUNDED VERSION WALKS INTO A HERMES
+    # CEILING.** Joining every attested proclitic form adds 106,974 rows and takes the table to
+    # 192,159 — and `parseLemmas` materialises the whole table as own properties on ONE plain
+    # object, which Hermes caps at **196,607** (measured; engine/docs/guides/benchmarking.md). That
+    # is 2.3% of headroom on a hard ceiling, on the runtime React Native actually ships and the one
+    # Node cannot show you. The next corpus refresh would crash the app on device with every test
+    # green.
+    #
+    # The floor costs almost nothing because `frequency.txt` cuts off at 219 occurrences: a row for
+    # a form seen 5 times in 20M tokens cannot affect ranking, introduction or coverage — it only
+    # decides what happens if a learner taps that exact string. At 10 the join keeps **96.2% of the
+    # corpus mass it recovers** for 31,658 rows instead of 106,974, and the table lands at 116,843,
+    # 59% of the cap.
+    CLITIC_FLOOR = int(os.environ.get("CLITIC_FLOOR", "10"))
+    clitic_stem_joined = 0
+    if script == "arabic":
+        for form in counts:
+            if form in lexicon or form in mapping or counts.get(form, 0) < CLITIC_FLOOR:
+                continue
+            best = None
+            for clitic in PROCLITICS:
+                if not form.startswith(clitic) or len(form) <= len(clitic) + 1:
+                    continue
+                stem = form[len(clitic):]
+                if (stem in lexicon and counts.get(stem, 0) > 0
+                        and counts.get(form, 0) <= RARITY_LIMIT * max(1, counts.get(stem, 0))
+                        and (best is None or counts.get(stem, 0) > counts.get(best, 0))):
+                    best = stem
+            if best is not None:
+                mapping[form] = mapping.get(best, best)
+                clitic_stem_joined += 1
 
     # Hand-written overrides win. `irregulars.tsv` is this project's own work (MIT, verified by
     # authorship), it predates the Wikidata swap, and it encodes decisions somebody made
@@ -589,6 +653,7 @@ def main(argv: list[str]) -> int:
     out.write_text("".join(lines), encoding="utf-8")
     print(f"  rows carrying alternate readings:     {with_alternates}")
     print(f"  clitic forms joined (ar):             {clitics_joined}")
+    print(f"  proclitic stems joined (ar):          {clitic_stem_joined}")
     print(f"  swept by the final rarity check:      {len(swept)}")
     print(f"  adjective forms generated:            {generated}")
     print(f"  hand-written overrides applied:       {overrides}")

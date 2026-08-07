@@ -321,14 +321,67 @@ class TiebreakGuards(unittest.TestCase):
         self.assertEqual(rows.get("الأول"), "أول")
         self.assertEqual(rows.get("الأولى"), "أول")
 
-    def test_the_self_lexeme_rule_actually_fires(self):
-        # ⚠️ VACUITY GUARD. Every assertion above is satisfied by a table with FEWER rows, so a
-        # builder that deleted half the file would pass them all. This is the floor in the other
-        # direction, and it is paired with `test_the_definite_article_is_still_joined` as the
-        # ceiling. Measured 1,651 self-lexeme rows and 85,162 total at the time of writing.
+    def test_the_table_stays_clear_of_the_hermes_property_ceiling(self):
+        # ⚠️ **A REAL CEILING, NOT A ROUND NUMBER.** `parseLemmas` materialises the whole table as
+        # own properties on ONE plain object, and **Hermes caps a plain object at 196,607 own
+        # properties** — measured, engine/docs/guides/benchmarking.md. Hermes is the runtime React
+        # Native ships and the one lane that cannot show you this: every other lane runs on Node,
+        # where the limit does not exist. An unfloored proclitic join lands at 192,159, which is
+        # 2.3% of headroom, so the next corpus refresh would crash the app on device with all 617
+        # jest tests green.
+        #
+        # The lower bound is the vacuity half: every other assertion in this class is satisfied by
+        # a SMALLER table, so a builder that deleted most of the file would pass them all.
         rows = table("ar")
-        self.assertGreater(len(rows), 80_000, "the table has lost rows wholesale")
-        self.assertLess(len(rows), 86_500, "the self-lexeme rule has stopped removing anything")
+        self.assertGreater(len(rows), 100_000, "the table has lost rows wholesale")
+        self.assertLess(len(rows), 150_000,
+                        "within reach of Hermes' 196,607 own-property cap on a plain object")
+
+
+class ProcliticJoin(unittest.TestCase):
+    """`و ب ل ف ك` attach like `ال` and were never joined — lughaty#206, lughaty ADR-0033."""
+
+    def test_the_relative_pronoun_survives_the_article(self):
+        # ⚠️ **THE DEFECT THIS ISSUE IS NAMED FOR.** `الذي`, one of the commonest words in Arabic
+        # (152,834x), was stripped to `ذي` — a rare form of `ذو`, 2,236x — which absorbed all of it
+        # and sat at RANK 16 of the frequency list, while `الذي` was absent from the list entirely.
+        # A learner was taught `ذي` as the sixteenth most important Arabic word. The feminine `التي`
+        # is a headword with no row and sat correctly at rank 8, which is why nobody noticed.
+        rows = table("ar")
+        self.assertIsNone(rows.get("الذي"), "الذي is a headword and must not be taken apart")
+        entries = [w for w in (ROOT / "languages" / "ar" / "out" / "frequency.txt")
+                   .read_text("utf-8").split("\n") if w]
+        self.assertIn("الذي", entries)
+        self.assertLess(entries.index("الذي"), 100)
+        self.assertGreater(entries.index("ذي"), 1_000, "ذي is rare and must not sit near the head")
+
+    def test_the_strip_is_chosen_by_the_commonest_stem(self):
+        # Longest-clitic-first reads `والذي` as وال+ذي and lands back on the rare `ذي`. Comparing
+        # stems gives و+الذي. The two orderings disagree on exactly the words this pass rescues.
+        self.assertEqual(table("ar").get("والذي"), "الذي")
+
+    def test_the_common_proclitic_forms_are_joined(self):
+        rows = table("ar")
+        for form, lemma in [("وقال", "قال"), ("وأضاف", "أضاف"), ("بشكل", "شكل"),
+                            ("بسبب", "سبب"), ("وهو", "هو"), ("والتي", "التي")]:
+            with self.subTest(form=form):
+                self.assertEqual(rows.get(form), lemma)
+
+    def test_it_does_not_take_apart_ordinary_words(self):
+        # ⚠️ **THE REASON THE GUARD IS THE LEXICON AND NOT "THE REMAINDER IS A KNOWN WORD".** Arabic
+        # roots are three consonants, so almost any 2-3 letter remainder is also a word: the naive
+        # rule reads `كان` (was) as ك+ان, `لجنة` (committee) as ل+جنة, `فقط` (only) as ف+قط, `بحث`
+        # (research) as ب+حث. Measured at 12 of 20 controls destroyed. Anchoring to Wikidata — never
+        # take apart a form the lexicon lists at all — destroys 0 of 45.
+        rows = table("ar")
+        for word in ["كان", "لجنة", "فقط", "بحث", "لها", "بها", "كأس", "باسم",
+                     "وقت", "وطن", "ولد", "كبير", "فكرة", "فاز", "كلام", "بلد", "بيت"]:
+            with self.subTest(word=word):
+                lemma = rows.get(word)
+                self.assertFalse(
+                    lemma is not None and len(lemma) < len(word) and word.endswith(lemma),
+                    f"{word} was taken apart into a proclitic plus {lemma!r}",
+                )
 
 
 class ArabicRulesAreArabicOnly(unittest.TestCase):
