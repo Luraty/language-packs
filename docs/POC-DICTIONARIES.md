@@ -13,7 +13,7 @@ dialect be built, and can everything be joined through one linked table?
 | pack | `en` — English, Leipzig news 2024 + Wikidata Lexemes | 23,293-row lemma table, 10,000-word list |
 | pack | `en-GB` — **same lexicon**, British ranking (ADR-0046's shape, on a second language) | 10,000-word list |
 | dict | **WordNet 3.1** — curated, synset-based | 147,478 lemmas / 155,467 (lemma,pos) |
-| dict | **Wiktionary EN** via Wiktextract — crowd-sourced | streaming, 3.0 GB source |
+| dict | **Wiktionary EN** via Wiktextract — crowd-sourced | 1,355,265 lemmas / 1,491,730 records |
 | dict | **Wiktionary DE** via Wiktextract | 371,255 entries |
 | bridge | `ConceptLink` + directed `VarietyTransfer`, ADR-0047's exact shape | — |
 
@@ -80,18 +80,35 @@ untested.
 gloss string rather than as structured data — `Jänner` → *"synonym of Januar"*. Recoverable by regex,
 fragile by construction.
 
-### 4. ⚠️ Two English dictionaries disagree by about 2×
+### 4. ⚠️ Two English dictionaries disagree by about 2×, and the tail is unusable
 
-On shared lemmas, Wiktionary carries roughly **twice** the senses of WordNet, and more on **88%** of
-them. `bank` is +23. **ADR-0028 shows a learner every reading — 23 readings is not a picker, it is a
-menu nobody reads.** A sense cutoff is required, and it is a product decision, not a data one.
+Measured on 7,037 shared lemmas: mean senses **WordNet 3.96 · Wiktionary 9.29**, median ratio
+**2.0×**, Wiktionary larger on **83.8%**.
 
-### 5. ⚠️ WordNet misses exactly the words a learner meets first
+```
+aa   +54      cap  +42      cat  +41      over +40      hack +39
+```
 
-Of the 1,000 commonest English words, **~18% are in neither dictionary** in the partial run — and they
-are `to of for that was from his this they`. WordNet is content-words only: no prepositions, pronouns,
-articles, auxiliaries. A WordNet-only meaning layer has nothing to say about the first page of
-anything. (Wiktionary does cover them; final numbers pending.)
+**ADR-0028 shows a learner every reading. 41 readings for `cat` is not a picker, it is a menu nobody
+reads.** A sense cutoff is required and it is a product decision, not a data one.
+
+### 5. ✅ Between them the two English dictionaries cover essentially everything — but neither alone does
+
+| | WordNet | Wiktionary | neither |
+| --- | --- | --- | --- |
+| top 1,000 | 79.9% | **100.0%** | 0.0% |
+| top 5,000 | 75.5% | 99.9% | 0.1% |
+| top 10,000 | 70.4% | 99.7% | 0.3% |
+| top 20,000 | 62.7% | 98.4% | 1.6% |
+
+**201 of the 1,000 commonest English words have no WordNet entry at all** — WordNet is content-words
+only, so every pronoun, determiner, preposition and auxiliary is absent. All 201 are in Wiktionary
+(as `pron` 32, `det` 21, `prep` 20, …). The six words in the top 5,000 that neither has are
+`marketbeat jpmorgan tinubu ishares citigroup bancorp` — tickers and names, i.e. corpus noise rather
+than a dictionary gap.
+
+**Verdict: Wiktionary is the meaning layer. WordNet is worth keeping only for its synset structure**,
+which is the thing Wiktionary lacks.
 
 ### 6. ⚠️ The lemma table's value is wildly language-dependent
 
@@ -135,3 +152,57 @@ differing only by vocalisation. Unnormalised translations carry near-duplicates 
   ordinary word is regional.
 - A first attempt at gloss-clustering stripped punctuation *before* splitting on it, losing every
   comma-delimited gloss. Fixing the order took shared-gloss clusters from 32,649 to 40,830 (+25%).
+
+### 9. ⚠️ Translation coverage is an order of magnitude worse than gloss coverage
+
+Only **8,838 of 1,355,265** English Wiktionary lemmas carry *any* translation — **0.65%**. And
+weighted by how often a learner meets the word:
+
+| | has a German translation | has an Arabic translation |
+| --- | --- | --- |
+| top 1,000 | 21.8% | 23.0% |
+| top 5,000 | 15.0% | 14.2% |
+| top 10,000 | 11.5% | 9.8% |
+
+So: a gloss for ~100% of what she reads, a cross-language equivalent for ~1 word in 5. **The concept
+spine cannot be built from Wiktionary translations alone.** Wikidata sense-links or an ILI mapping
+would have to carry the rest.
+
+### 10. ✅ The bridge works end to end — after the pack's own normalizer is applied
+
+Built to ADR-0047's shape: **9,484 concepts, 39,993 links** across `en de fr es nl ar tr` plus
+`en-US en-GB en-CA en-IE`.
+
+Usable end-to-end, meaning *both* sides are in their pack's 10,000-word vocabulary:
+**878 for en↔de, 100 for en↔ar.**
+
+⚠️ **And that Arabic number is a normalization artefact, not a data limit.** Wiktionary writes Arabic
+*vocalised* (`كَلِمَة`); the pack's lexicon is unvocalised (`كلمة`). Matching raw strings:
+
+```
+                          in 10k vocab      in 194k lexicon
+as the dictionary gives    131   3.3%        226    5.7%
+after pack normalize     1,350  34.2%      2,207   55.8%      ← 10x
+```
+
+**A dictionary must be passed through the pack's own `normalize` chain before any of its words can be
+matched.** The same pass also collapses 274 near-duplicate spellings (`مَصْيَدَة` / `مِصْيَدَةٌ`),
+removing 327 redundant links.
+
+This is the repo's existing lesson in a new costume: the normalize chain and the lemma table are two
+descriptions of one language, and nothing makes them agree except code that compares them.
+
+## Verdict
+
+**Yes to dictionaries, with three conditions.**
+
+1. **Use Wiktionary for meaning, not WordNet.** 100% vs 79.9% on the first thousand words, and
+   WordNet structurally cannot hold a preposition.
+2. **Normalize through the pack before matching anything.** 10× on Arabic. Skipping this looks like
+   "the dictionary doesn't have our words".
+3. **Do not expect variety attribution.** 5 Austrian tags in 371,255 German entries. The concept
+   clustering is free; the variety labels are not, and must come from a variety dictionary or from
+   corpus evidence.
+
+**And one thing to fix regardless of dictionaries:** the English lemma table is already deciding
+US/GB variety questions three inconsistent ways (finding 1). That is live in the pack build today.

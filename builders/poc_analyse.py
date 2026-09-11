@@ -82,11 +82,11 @@ if ratios:
     print(f'  mean senses   WordNet {sum(dw)/len(dw):5.2f}   Wiktionary {sum(dk)/len(dk):5.2f}')
     print(f'  median ratio (Wiktionary / WordNet): {med:.2f}x')
     print(f'  Wiktionary has MORE senses on {sum(1 for r in ratios if r>1)/len(ratios):.1%} of them')
-    worst = sorted(((sum(len(r.get("g",[])) for r in wk[w]) - sum(len(r.get("g",[])) for r in wn[w]), w)
+    worst = sorted(((sum(len(r.get('s', [])) for r in wk[w]) - sum(len(r.get('g', [])) for r in wn[w]), w)
                     for w in shared), reverse=True)[:8]
     print('  biggest gaps (Wiktionary extra senses):')
     for diff, w in worst:
-        g_wn = (wn[w][0].get('g') or [''])[0][:48]
+        g_wn = (wn[w][0].get('g') or [''])[0][:52]
         g_wk = ((wk[w][0].get('s') or [{}])[0].get('g') or '')[:48]
         print(f'    {w:<14} +{diff:<4} WN: {g_wn}')
         print(f'    {"":<14}      WK: {g_wk}')
@@ -122,7 +122,7 @@ tr_by_word = {}
 for w, recs in wk.items():
     t = {}
     for r in recs:
-        for lc, tw in r.get('tr', []):
+        for lc, tw, *_ in r.get('tr', []):
             t.setdefault(lc, set()).add(tw)
     if t:
         tr_by_word[w] = t

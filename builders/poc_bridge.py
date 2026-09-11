@@ -41,6 +41,15 @@ def concept_id(word, pos, gloss):
 
 links, seen_concepts = [], {}
 stats = Counter()
+
+def norm(g):
+    """Wiktionary's translation `sense` is a gloss-LIKE string, never the gloss verbatim.
+    ⚠️ A first pass required `sense == gloss` and matched almost nothing: 19 concepts out of
+    1.35M entries, because exact equality basically never holds for a multi-sense word."""
+    g = (g or '').split(',')[0].split(';')[0].split('(')[0]
+    g = re.sub(r'^(a|an|the|to) ', '', g.strip().lower())
+    return re.sub(r'[^a-z ]', '', g).strip()
+
 with open(src, encoding='utf-8') as fh:
     for line in fh:
         try: e = json.loads(line)
@@ -52,20 +61,29 @@ with open(src, encoding='utf-8') as fh:
         if not tr:
             continue
         senses = e.get('s') or [{'g': ''}]
-        # Translations carry a `sense` string. Match it to a sense when we can; otherwise the
-        # translation belongs to the entry's FIRST sense, which is Wiktionary's own convention.
-        by_gloss = {sn.get('g', ''): sn for sn in senses}
-        for sn in senses:
+        gnorm = [norm(sn.get('g', '')) for sn in senses]
+
+        buckets = {i: [] for i in range(len(senses))}
+        for t in tr:
+            sn_txt = norm(t[2] if len(t) > 2 else '')
+            idx = 0                                   # default: the entry's first sense
+            if sn_txt:
+                for i, g in enumerate(gnorm):
+                    if g and (g == sn_txt or g.startswith(sn_txt) or sn_txt.startswith(g)):
+                        idx = i; break
+            buckets[idx].append(t)
+
+        for i, sn in enumerate(senses):
+            mine = buckets[i]
+            if not mine:
+                continue
             gloss = sn.get('g', '')
             cid = concept_id(w, e.get('p', ''), gloss)
             if cid in seen_concepts:
                 continue
+            seen_concepts[cid] = gloss
             # ⚠️ the tag is the SENSE's, never the word's — see poc_wiktextract.py
             varieties = sorted({TAG_TO_VARIETY[t] for t in (sn.get('rt') or []) if t in TAG_TO_VARIETY}) or ['en']
-            mine = [t for t in tr if not t[2] or t[2] == gloss] if len(senses) > 1 else tr
-            if not mine:
-                continue
-            seen_concepts[cid] = gloss
             for v in varieties:
                 links.append({'concept': cid, 'variety': v, 'lemma': w})
                 stats[v] += 1
@@ -74,8 +92,6 @@ with open(src, encoding='utf-8') as fh:
                 if lc in KEEP_LANGS:
                     links.append({'concept': cid, 'variety': lc, 'lemma': tw})
                     stats[lc] += 1
-            if limit and len(seen_concepts) >= limit:
-                break
         if limit and len(seen_concepts) >= limit:
             break
 
