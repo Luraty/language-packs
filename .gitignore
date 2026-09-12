@@ -26,3 +26,7 @@ node_modules/
 
 # Scratch output
 reports/
+
+# ⚠️ `data/` above does NOT match a SYMLINK named `data` — git treats the link as a plain blob, so
+# `git add -A` staged it and pushed an absolute path to one machine's corpus cache. This line does.
+/data
