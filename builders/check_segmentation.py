@@ -18,6 +18,11 @@ import sys
 
 a = sys.argv
 seg_path, lex_path = a[1], a[a.index('--lexicon') + 1]
+# ⚠️ THE VOCABULARY IS NOT A SUBSET OF THE LEXICON, and this check asserted it was. Only ~54% of
+# frequency.msa.txt resolves against lemmas.tsv, so segmenting the words a learner is actually
+# TAUGHT — which is the point — produces thousands of forms the lexicon has no row for. Both sets
+# are legitimate inputs; the check must accept either.
+vocab_path = a[a.index('--vocab') + 1] if '--vocab' in a else None
 
 lexicon = set()
 lemmas = {}
@@ -26,6 +31,8 @@ for line in open(lex_path, encoding='utf-8'):
     if f and f[0]:
         lexicon.add(f[0])
         lemmas[f[0]] = [x for x in f[1:] if x]
+if vocab_path:
+    lexicon.update(w for w in open(vocab_path, encoding='utf-8').read().split() if w)
 
 rows, unknown, empty, agree, both = 0, [], [], 0, 0
 for line in open(seg_path, encoding='utf-8'):

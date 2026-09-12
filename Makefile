@@ -95,7 +95,7 @@ dict-ar:
 # overwritten the other.
 segmentation:
 	@python3 builders/check_segmentation.py languages/fusha/out/segmentation.tsv \
-	  --lexicon languages/fusha/out/lemmas.tsv
+	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt
 
 # Needs CAMeL Tools. ⚠️ Install the DB by name — `camel_data -i light` pulls morphology-db-msa-s31,
 # which requires a PURCHASED LDC licence:
@@ -103,6 +103,8 @@ segmentation:
 #   .venv/bin/camel_data -i morphology-db-msa-r13 -i disambig-mle-calima-msa-r13
 seg-ar:
 	@cut -f1 languages/fusha/out/lemmas.tsv > /tmp/lp-forms.txt
+	@cat languages/fusha/out/frequency.msa.txt >> /tmp/lp-forms.txt
+	@sort -u -o /tmp/lp-forms.txt /tmp/lp-forms.txt
 	@.venv/bin/python builders/segment_camel.py /tmp/lp-forms.txt languages/fusha/out/segmentation.tsv
 	@$(MAKE) --no-print-directory segmentation
 
