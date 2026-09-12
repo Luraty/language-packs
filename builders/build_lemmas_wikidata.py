@@ -206,6 +206,16 @@ def main(argv: list[str]) -> int:
     FUNCTION = {"Q468801", "Q184943", "Q380057", "Q4833830", "Q36484", "Q576271", "Q1401131"}
     # Longest first, so وال is tested before و.
     PROCLITICS = ("وال", "بال", "فال", "كال", "لل", "ال", "و", "ب", "ل", "ف", "ك", "س")
+    # The attached pronouns. Longest first only so the candidate loop sees them all; the WINNER is
+    # chosen by stem frequency further down, never by this order — see the enclitic pass.
+    ENCLITICS = ("هما", "كما", "هنّ", "كنّ", "هم", "هن", "كم", "كن", "نا", "ها", "ه", "ك", "ي")
+    # Arabic's closed class: prepositions and particles. Two letters, and between them the commonest
+    # words in any Arabic text. Listed because the enclitic pass refuses short stems by default and
+    # these are the exception — a closed class cannot grow, so this cannot go stale.
+    CLOSED_CLASS = frozenset((
+        "في", "من", "عن", "على", "إلى", "مع", "بين", "عند", "لدى", "حتى", "أن", "إن", "أنّ",
+        "لكن", "قد", "كل", "بعض", "غير", "بعد", "قبل", "منذ", "حول", "ضد", "نحو", "خلال",
+    ))
     # ⚠️ **THE FOUR RULES BELOW RUN FOR ARABIC ONLY, AND THAT IS A LIMIT ON THE EVIDENCE RATHER
     # THAN ON THE IDEA.** Two of them — the function-word guard and the self-lexeme rule — are
     # stated in language-neutral terms and would fire on German unchanged. Every guard that keeps
@@ -623,6 +633,54 @@ def main(argv: list[str]) -> int:
                 mapping[form] = mapping.get(best, best)
                 clitic_stem_joined += 1
 
+    # ⚠️ **THE ENCLITICS — THE ATTACHED PRONOUNS, WHICH NOTHING HANDLED UNTIL 2026-09-12.**
+    # Arabic suffixes its object and possessive pronouns: فيها is في+ها, بها is ب+ها, أنه is أن+ه.
+    # Measured against the Arabic dictionary that day: of 4,477 words in the top 10,000 with no
+    # dictionary entry, **1,399 end in an attached pronoun** and were simply never looked up under
+    # the word they actually contain. The proclitic passes above strip PREFIXES only.
+    #
+    # ⚠️ **THE SAME TWO GUARDS THE PROCLITIC PASS BOUGHT WITH INCIDENTS, FOR THE SAME REASONS.**
+    # (1) Never take apart a form the lexicon lists at all — في ends in ي and would otherwise read
+    # as ف+ي, and نادي would become ناد. (2) Choose by the COMMONEST stem, never the longest
+    # clitic: longest-first reads عليهم as علي+هم and lands on the rare علي instead of على.
+    #
+    # ⚠️ **AND ONE GUARD THE PREFIX PASS DOES NOT NEED: A MINIMUM STEM LENGTH.** An Arabic root is
+    # three letters, so a two-letter remainder is almost always an accident of the suffix rather
+    # than a word — بها would otherwise strip to ب. Stems shorter than three characters are refused
+    # outright, before the lexicon is even consulted.
+    enclitic_joined = 0
+    if script == "arabic":
+        for form in counts:
+            if form in lexicon or form in mapping or form in own_categories:
+                continue
+            best = None
+            for clitic in ENCLITICS:
+                if not form.endswith(clitic):
+                    continue
+                base = form[: -len(clitic)]
+                # ⚠️ **ى BECOMES ي WHEN A PRONOUN ATTACHES, AND STRING-STRIPPING CANNOT UNDO IT.**
+                # إليه is إلى + ه, but chopping ه leaves إلي — a DIFFERENT word that is also in the
+                # lexicon, so every guard here passes and the join is silently wrong. `normalize`
+                # deliberately does not fold ى/ي (that lives in `compare`, and packs/ar's docblock
+                # records why), so the alternation has to be tried explicitly.
+                candidates = [base]
+                if base.endswith("ي"):
+                    candidates.append(base[:-1] + "ى")
+                for stem in candidates:
+                    # A two-letter stem is normally an accident of the suffix — بها would strip to
+                    # ب. But Arabic's closed class IS two letters and IS the commonest vocabulary
+                    # in any text: في من عن أن. Enumerating it is safe precisely because it is
+                    # closed — it cannot grow, so an allowlist cannot go stale.
+                    if len(stem) < 3 and stem not in CLOSED_CLASS:
+                        continue
+                    if (stem in lexicon and counts.get(stem, 0) > 0
+                            and counts.get(form, 0) <= RARITY_LIMIT * max(1, counts.get(stem, 0))
+                            and (best is None or counts.get(stem, 0) > counts.get(best, 0))):
+                        best = stem
+            if best is not None:
+                mapping[form] = mapping.get(best, best)
+                enclitic_joined += 1
+
     # Hand-written overrides win. `irregulars.tsv` is this project's own work (MIT, verified by
     # authorship), it predates the Wikidata swap, and it encodes decisions somebody made
     # deliberately — dropping it to adopt a dump would throw away the one input with no upstream
@@ -709,6 +767,7 @@ def main(argv: list[str]) -> int:
     print(f"  rows carrying alternate readings:     {with_alternates}")
     print(f"  clitic forms joined (ar):             {clitics_joined}")
     print(f"  proclitic stems joined (ar):          {clitic_stem_joined}")
+    print(f"  enclitic stems joined (ar):           {enclitic_joined}")
     print(f"  swept by the final rarity check:      {len(swept)}")
     print(f"  adjective forms generated:            {generated}")
     print(f"  hand-written overrides applied:       {overrides}")
