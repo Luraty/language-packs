@@ -88,7 +88,24 @@ dict-ar:
 	  --out languages/fusha/out/dictionary.wiktionary-ar.json
 	@$(MAKE) --no-print-directory dictionaries
 
-test: check verify dictionaries
+# ⚠️ THE SEGMENTATION IS FOR DICTIONARY LOOKUP, NEVER FOR UNIT KEYS. A unit key is
+# modality:variety:LEMMA; if a segment ever fed that, every learner's history would re-address
+# itself silently. This lane asserts the two tables stay DIFFERENT — convergence means one has
+# overwritten the other.
+segmentation:
+	@python3 builders/check_segmentation.py languages/fusha/out/segmentation.tsv \
+	  --lexicon languages/fusha/out/lemmas.tsv
+
+# Needs CAMeL Tools. ⚠️ Install the DB by name — `camel_data -i light` pulls morphology-db-msa-s31,
+# which requires a PURCHASED LDC licence:
+#   python3 -m venv .venv && .venv/bin/pip install camel-tools
+#   .venv/bin/camel_data -i morphology-db-msa-r13 -i disambig-mle-calima-msa-r13
+seg-ar:
+	@cut -f1 languages/fusha/out/lemmas.tsv > /tmp/lp-forms.txt
+	@.venv/bin/python builders/segment_camel.py /tmp/lp-forms.txt languages/fusha/out/segmentation.tsv
+	@$(MAKE) --no-print-directory segmentation
+
+test: check verify dictionaries segmentation
 	@python3 -m unittest discover -s builders -p 'test_*.py'
 
 # ── corpora ───────────────────────────────────────────────────────────────────────────────────
