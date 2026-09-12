@@ -28,6 +28,7 @@ def opt(name, default=None):
 
 src, out_path = a[1], opt('--out')
 dict_id, l1 = opt('--id'), opt('--l1')
+licence, provenance = opt('--licence', 'unknown'), opt('--provenance', '')
 max_senses = int(opt('--max-senses', '5'))
 
 reachable = set()
@@ -44,6 +45,13 @@ for line in open(src, encoding='utf-8'):
     try: r = json.loads(line)
     except Exception: continue
     key = norm(r['w'])
+    # ⚠️ **A KEY THAT NORMALIZES TO NOTHING MATCHES EVERYTHING.** The Qur'anic verse-end mark ۝ is a
+    # dictionary headword and strips to the empty string; an artifact containing it makes `'' in
+    # dict` true, and any lookup that falls back to '' reports a hit. A coverage measurement built
+    # on that read 99.8% instead of 74.5%.
+    if not key:
+        dropped += 1
+        continue
     if key not in reachable:
         dropped += 1
         continue
@@ -65,6 +73,10 @@ artifact = {
     'id': dict_id,
     'l1': l1,
     'built': datetime.date.today().isoformat(),
+    'licence': licence,
+    # ⚠️ Written on the artifact, never inferred from a filename. Two of these sources are
+    # machine-generated and one is 14th-century; a reader cannot tell them apart from the id.
+    'provenance': provenance,
     'reviewed_by': None,
     'normalize': ['stripArabicDiacritics', 'stripTatweel'],
     'maxSenses': max_senses,

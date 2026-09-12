@@ -27,7 +27,19 @@ for line in open(lexicon_path, encoding='utf-8'):
     if f and f[0]:
         reachable.add(norm(f[0]))
         reachable.update(norm(x) for x in f[1:] if x)
-vocab = [norm(w) for w in open(vocab_path, encoding='utf-8').read().split()]
+raw_vocab = [w for w in open(vocab_path, encoding='utf-8').read().split() if w]
+vocab = [norm(w) for w in raw_vocab]
+
+# ⚠️ REPORT WHAT A LEARNER ACTUALLY GETS. The app looks a word up, and falls back to its stem when
+# the whole form misses — that is the entire point of segmentation.tsv. A check that reported only
+# direct hits would understate every source by ~18 points and make a real improvement invisible.
+stem = {}
+seg_path = a[a.index('--segmentation') + 1] if '--segmentation' in a else None
+if seg_path:
+    for line in open(seg_path, encoding='utf-8'):
+        f = line.rstrip('\n').split('\t')
+        if len(f) >= 2 and f[1].strip():
+            stem[f[0]] = norm(f[1])
 reachable |= set(vocab)
 
 problems = 0
@@ -37,13 +49,18 @@ for path in [x for x in a[1:] if x.endswith('.json')]:
     unreachable = [k for k in entries if k not in reachable]
     unnormalized = [k for k in entries if norm(k) != k]
     empty = [k for k, v in entries.items() if not v.get('senses')]
+    blank = [k for k in entries if not k.strip()]
     covered = sum(1 for w in vocab if w in entries)
+    with_stem = sum(1 for w in raw_vocab
+                    if norm(w) in entries or (stem.get(w) and stem[w] in entries))
 
-    print(f"  {d['id']:<16} {len(entries):>7,} entries   covers {covered/len(vocab):>6.1%} of the vocabulary"
-          f"   l1={d['l1']}  reviewed_by={d['reviewed_by']}")
+    extra = f"  +stem {with_stem/len(vocab):>6.1%}" if stem else ""
+    print(f"  {d['id']:<16} {len(entries):>7,} entries   direct {covered/len(vocab):>6.1%}{extra}"
+          f"   l1={d['l1']}  {d.get('licence', '?')}")
     for label, bad in (('unreachable in the lexicon', unreachable),
                        ('not normalized', unnormalized),
-                       ('no senses', empty)):
+                       ('no senses', empty),
+                       ('BLANK — a key that normalizes to nothing matches every lookup', blank)):
         if bad:
             problems += 1
             print(f"    ✗ {len(bad):,} keys {label}: {' '.join(bad[:6])}")

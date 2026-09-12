@@ -74,7 +74,8 @@ provenance-update:
 # all three against each other and refuses a key nothing can reach.
 dictionaries:
 	@python3 builders/check_dictionary.py languages/fusha/out/dictionary.*.json \
-	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt
+	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt \
+	  --segmentation languages/fusha/out/segmentation.tsv
 
 # Build both Arabic dictionaries from the extracted dumps. Sources are streamed, never stored:
 #   curl -sL <kaikki Arabic>  | python3 builders/dict_kaikki_ar.py     data/dict/wikt-ar-en.jsonl
