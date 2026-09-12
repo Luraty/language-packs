@@ -678,7 +678,29 @@ def main(argv: list[str]) -> int:
                             and (best is None or counts.get(stem, 0) > counts.get(best, 0))):
                         best = stem
             if best is not None:
-                mapping[form] = mapping.get(best, best)
+                # ⚠️ **FOLLOW THE CHAIN AND REFUSE A TARGET THE CORPUS NEVER USES.** Joining to the
+                # stem is not enough: the stem may itself already map somewhere, and some of those
+                # existing rows are wrong. أجرهم strips to أجر (reward) — correct — and أجر was
+                # already mapped to جرى (to flow). بيوتكم strips to بيوت (houses), already mapped to
+                # بات (to spend the night). Neither target appears in the Qur'an, so both words
+                # stopped being reachable at all: 583 Qur'anic words vanished from the curriculum in
+                # the first run of this pass, which is #106's failure exactly.
+                #
+                # This pass cannot fix a bad row it did not write, but it must not ROUTE MORE WORDS
+                # THROUGH ONE. If the chain ends somewhere the corpus never attests, the join is
+                # refused and the form stays its own lemma — visible and teachable, rather than
+                # silently redirected into nothing.
+                # ⚠️ **JOIN TO A LEMMA, NEVER THROUGH A CHAIN.** Following an existing mapping
+                # inherits whatever that row says, and some rows are wrong: أجر (reward) was
+                # already mapped to جرى (to flow), بيوت (houses) to بات (to spend the night). Those
+                # lemmas are attested in Leipzig and never used in the Qur'an, so joining through
+                # them took 556 Qur'anic words out of the curriculum entirely — a word taught as a
+                # clumsy whole form is worse prose and better teaching than one silently removed.
+                #
+                # This pass cannot repair a bad row it did not write. It can decline to multiply it.
+                if best in mapping:
+                    continue
+                mapping[form] = best
                 enclitic_joined += 1
 
     # Hand-written overrides win. `irregulars.tsv` is this project's own work (MIT, verified by

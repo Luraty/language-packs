@@ -68,7 +68,27 @@ verify:
 provenance-update:
 	@python3 builders/verify_provenance.py --update
 
-test: check verify
+# ⚠️ A DICTIONARY IS A THIRD DESCRIPTION OF THE SAME LANGUAGE, and it drifts from the lexicon and
+# the frequency list exactly the way those two drifted from each other in #106 — 1,252 keys the
+# vocabulary did not contain, 10.3% of the Qur'an unlearnable, every test green. This lane compares
+# all three against each other and refuses a key nothing can reach.
+dictionaries:
+	@python3 builders/check_dictionary.py languages/fusha/out/dictionary.*.json \
+	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt
+
+# Build both Arabic dictionaries from the extracted dumps. Sources are streamed, never stored:
+#   curl -sL <kaikki Arabic>  | python3 builders/dict_kaikki_ar.py     data/dict/wikt-ar-en.jsonl
+#   bzcat  <ar.wiktionary xml> | python3 builders/dict_arwiktionary.py data/dict/wikt-ar-ar.jsonl
+dict-ar:
+	@python3 builders/build_dictionary.py data/dict/wikt-ar-en.jsonl --id wiktionary-en --l1 en \
+	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt \
+	  --out languages/fusha/out/dictionary.wiktionary-en.json
+	@python3 builders/build_dictionary.py data/dict/wikt-ar-ar.jsonl --id wiktionary-ar --l1 ar \
+	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt \
+	  --out languages/fusha/out/dictionary.wiktionary-ar.json
+	@$(MAKE) --no-print-directory dictionaries
+
+test: check verify dictionaries
 	@python3 -m unittest discover -s builders -p 'test_*.py'
 
 # ── corpora ───────────────────────────────────────────────────────────────────────────────────

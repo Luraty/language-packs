@@ -128,9 +128,14 @@ for (const [index, file] of inputs.entries()) {
     // It also merges sentence-initial capitals with the ordinary word, which is what makes the
     // counts mean anything in German.
     const key = lemmaOf.get(surface) ?? surface;
-    const entry = counts.get(key) ?? { total: 0, corpora: new Set() };
+    const entry = counts.get(key) ?? { total: 0, corpora: new Set(), forms: new Map() };
     entry.total += count;
     entry.corpora.add(index);
+    // ⚠️ REMEMBER WHICH SURFACES FED THIS KEY. One lexicon serves several corpora (ADR-0046), so a
+    // lemma can be perfectly real and still never appear in THIS corpus — and the filter below
+    // would then drop the key AND every occurrence summed onto it. Keeping the contributors lets
+    // that mass be re-keyed onto a surface this corpus does use, instead of vanishing.
+    entry.forms.set(surface, (entry.forms.get(surface) ?? 0) + count);
     counts.set(key, entry);
     kept++;
   }
@@ -166,7 +171,35 @@ for (const file of inputs) {
 // the long tail of `dassder`, `Beeitschaft` and scanner noise that would otherwise occupy slots in a
 // 10k list and, worse, let `splitCompounds` accept nonsense parts. See --min-count above: the floor
 // only means something relative to corpus size.
+// ⚠️ **AN UNATTESTED LEMMA USED TO TAKE ITS WHOLE CORPUS MASS WITH IT, AND THAT IS #106's SHAPE.**
+// The lexicon is built over Leipzig AND the Qur'an together, on purpose — the statistics need the
+// big corpus. So `أجر` (reward) maps to `جرى`, which Leipzig attests and the Qur'an never uses.
+// Ranking the Qur'an then summed أجرهم, أجركم and أجر onto `جرى` and dropped the key as unattested,
+// so **556 Qur'anic words stopped being teachable at all** the day the enclitic pass joined them.
+// They were reachable before only because nothing folded them.
+//
+// Re-key rather than drop: the mass moves to the commonest surface THIS corpus actually contains.
+// A curriculum can then never lose a word because the shared lexicon points somewhere it does not
+// go. It does not repair the bad row — `أجر → جرى` is still wrong — but a wrong lemma that is
+// still taught is visible, and a word silently removed from the curriculum is not.
+const rekeyed = [];
 const dropped = [];
+for (const [key, v] of [...counts.entries()]) {
+  if (attested.has(key)) continue;
+  let best = null;
+  for (const [form, n] of v.forms) {
+    if (attested.has(form) && (best === null || n > v.forms.get(best))) best = form;
+  }
+  if (best === null) continue;
+  const into = counts.get(best) ?? { total: 0, corpora: new Set(), forms: new Map() };
+  into.total += v.total;
+  for (const c of v.corpora) into.corpora.add(c);
+  for (const [f, n] of v.forms) into.forms.set(f, (into.forms.get(f) ?? 0) + n);
+  counts.set(best, into);
+  counts.delete(key);
+  rekeyed.push(`${key}->${best}`);
+}
+
 const ranked = [...counts.entries()]
   .filter(([, v]) => v.corpora.size > 1 || v.total >= MIN_COUNT)
   .filter(([w]) => {
@@ -176,6 +209,11 @@ const ranked = [...counts.entries()]
   })
   .sort((a, b) => b[1].total - a[1].total || (a[0] < b[0] ? -1 : 1))
   .slice(0, LIMIT);
+
+if (rekeyed.length > 0) {
+  console.error(`  unattested lemmas re-keyed onto an attested surface: ${String(rekeyed.length)}`);
+  console.error(`    ${rekeyed.slice(0, 8).join(' ')}${rekeyed.length > 8 ? ' …' : ''}`);
+}
 
 if (dropped.length > 0) {
   console.error(`  unattested keys dropped: ${String(dropped.length)}`);

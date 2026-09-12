@@ -5,14 +5,14 @@
   "⚠️": "First build. The corpus is a single closed text, so unlike German and Arabic these counts are not a sample of a language — they describe the Qur'an exactly.",
   "files": {
     "frequency.txt": {
-      "sha256": "a4c424990ef8ed13e002b3bb297d1dbb96c591ab72c510fdaa11e880655ac4da",
-      "rows": 9598,
-      "bytes": 114674
+      "sha256": "7ed3279c2743a680f1e829be2d3e11e2c552ad83a623d9ddfeec7c5b5d1eb2cd",
+      "rows": 8022,
+      "bytes": 95634
     },
     "lemmas.tsv": {
-      "sha256": "455c027dd208c96b3c649726df432b53a937bd04a1234f191edcd432b1b4bafb",
-      "rows": 87860,
-      "bytes": 1872991
+      "sha256": "b94a045274bba3f0227c2e0da435af74dad5acc19cc14c6765300053e4616956",
+      "rows": 206520,
+      "bytes": 4616247
     },
     "uthmani.tsv": {
       "sha256": "a35d3eaed05c3ac3a1c15358fa1dd931c4938c228984a53df15a83897aa25b56",
