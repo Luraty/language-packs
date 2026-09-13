@@ -1,0 +1,36 @@
+{
+  "id": "de",
+  "tokenize": {
+    "strategy": "regex",
+    "pattern": "[a-zA-ZäöüÄÖÜßẞ]+"
+  },
+  "normalize": [
+    "lowercase",
+    "stripPunctuation",
+    "foldGermanUmlauts",
+    "foldLatinDiacritics"
+  ],
+  "affixes": {
+    "prefixes": [
+      "ge"
+    ],
+    "onlyIfRemainderKnown": true
+  },
+  "compare": [
+    "lowercase",
+    "stripPunctuation",
+    "foldGermanUmlauts",
+    "foldLatinDiacritics"
+  ],
+  "compounds": {
+    "minPartLength": 4,
+    "linkers": [
+      "",
+      "s",
+      "n",
+      "en",
+      "es",
+      "er"
+    ]
+  }
+}

@@ -7,15 +7,15 @@ Two audiences, and the split is deliberate:
 
 - **You want a frequency list.** Take `languages/<lang>/out/frequency.txt` — one lemma per line,
   commonest first. Read `languages/<lang>/SOURCES.md` for the licence before you redistribute it.
-- **You are working on [Luraty](https://github.com/younissk/lughaty).** This repo is the upstream
-  for `@luraty/pack-*`. See *The seam*, below.
+- **You want a pack for `@luraty/engine`.** `npm install @luraty/pack-ar` (or `pack-ar-x-quran`,
+  `pack-de`). The packages live in [`packs/`](packs/). See *The npm packages*, below.
 
 ## What is here today
 
 | Language | Frequency list | Lemma table | Pipeline |
 | --- | --- | --- | --- |
 | German (`de`) | ✅ 10,000 lemmas | ✅ 83,361 inflections | ✅ reproducible |
-| Arabic (`ar`) | ✅ 10,000 MSA lemmas | ✅ 86,910 inflections | ✅ reproducible |
+| Arabic (`ar`) | ✅ 10,000 MSA lemmas | ✅ 192,255 surface forms | ✅ reproducible |
 | Qur'anic Arabic (`ar-x-quran`) | ✅ 9,598 lemmas | ✅ + mushaf spelling | ✅ reproducible |
 
 ## The pipeline
@@ -114,20 +114,27 @@ that generating them from one source avoids.
 these projects; every job dies in seconds with `steps: []`. A target you run is honest. A workflow
 file that never starts is not.
 
-## The seam with Luraty
+## The npm packages
 
-`@luraty/pack-de` lives in the private [lughaty](https://github.com/younissk/lughaty) repo, not here,
-because it imports `@luraty/engine` at runtime and that package is private and unpublished — a public
-repo cannot install it. So the pack **vendors** the two output files and turns them into a TypeScript
-module (React Native has no `fs`, so a pack cannot ship as `.txt`).
+[`packs/`](packs/) holds `@luraty/pack-ar`, `@luraty/pack-ar-x-quran` and `@luraty/pack-de`: the
+built `frequency.txt` + `lemmas.tsv` for a language, wrapped as a ready `LanguagePack` for
+[`@luraty/engine`](https://github.com/Luraty/engine). React Native has no `fs`, so each pack turns its
+data files into a TypeScript module (`npm run generate`) and a consumer only runs `npm install`.
 
-Direction of truth is one-way: **this repo generates, lughaty vendors.** `out/provenance.json`
-records the checksums so a divergence is detectable rather than silent. When the engine publishes to
-npm, the pack moves here and the duplication ends. Recorded as
-[ADR-0008](https://github.com/younissk/lughaty/blob/main/docs/adr/0008-repositories-are-split-by-rate-of-change-not-by-subject.md).
+They moved here from the private Luraty app repository on 2026-09-13, once the engine was on npm —
+until then a public repo could not install it. Nothing was rebuilt in the move: each `0.1.x` ships
+exactly the files the app was already using.
 
-Two analysis tools stayed behind for the same reason — `coverage-curve.mjs` and `diagnose-gap.mjs`
-bundle against the engine to measure a pack, so they cannot run here.
+⚠️ **TWO OF THE THREE ARE NOT TODAY'S `make` OUTPUT.** `packs/ar` is byte-identical to
+`languages/ar/out/`. `packs/de` is the 2026-07-28 treebank build (commit `703b101`, CC BY-SA lemma
+table), not the current Wikidata rebuild in `languages/de/out/`; `packs/ar-x-quran` is the 2026-07-30
+build plus 2,689 mushaf-spelling rows, not the current rebuild. Adopting a rebuild is a deliberate
+minor version, with its measurements redone — never a silent `cp`.
+
+```bash
+cd packs/ar && npm install && npm run check   # typecheck, tests, build, publint, a plain-Node import
+npm publish                                   # prepack builds dist/
+```
 
 ## Qur'anic Arabic
 

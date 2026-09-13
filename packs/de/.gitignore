@@ -1,0 +1,4 @@
+node_modules/
+# `npm run try` bundles the engine + pack here with esbuild before running.
+reports/
+dist/
