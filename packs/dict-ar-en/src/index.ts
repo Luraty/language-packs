@@ -7,7 +7,7 @@ import { COVERAGE, ROWS, SOURCES } from './data.generated.js';
  * import { msa } from '@luraty/pack-ar';
  * const { lookup } = await import('@luraty/dict-ar-en'); // lazily, when the reader opens
  *
- * lookup(msa.key('وَالكِتَابِ')); // [{ source: 'wiktionary-en', senses: [… 'book' …], pos: ['noun'] }, { source: 'lane', … }]
+ * lookup(msa.key('وَالكِتَابِ')); // [{ source: 'wiktionary-en', senses: [… 'book' …], pos: ['noun'] }]
  * ```
  *
  * ⚠️ **`lookup` TAKES A KEY, NOT A WORD.** It does no normalizing, stripping or lemmatizing of its
@@ -25,8 +25,11 @@ import { COVERAGE, ROWS, SOURCES } from './data.generated.js';
  * @module
  */
 
-/** A dictionary this package draws on. */
-export type SourceId = 'wiktionary-en' | 'lane';
+/**
+ * A dictionary this package draws on. One today; `lookup` returns a list of per-source meanings so a
+ * second source is a widened union, not a changed return shape.
+ */
+export type SourceId = 'wiktionary-en';
 
 /** What one source says about one key. */
 export interface Meaning {
@@ -41,7 +44,7 @@ export interface Meaning {
 export interface Source {
   readonly id: SourceId;
   readonly name: string;
-  /** SPDX identifier, or `public-domain`. */
+  /** SPDX identifier. */
   readonly licence: string;
   readonly url: string;
   /** How the data reached this package, as recorded on the build artifact. */
@@ -102,7 +105,8 @@ function load(): Map<string, readonly Meaning[]> {
 }
 
 /**
- * Every meaning recorded for a `@luraty/pack-ar` key, Wiktionary first. `[]` when there is none.
+ * Every meaning recorded for a `@luraty/pack-ar` key, one entry per source in `sources` order. `[]`
+ * when there is none.
  */
 export function lookup(key: string): readonly Meaning[] {
   table ??= load();

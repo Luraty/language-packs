@@ -23,7 +23,8 @@ describe('attribution', () => {
   it('names every source, its licence and its URL', () => {
     for (const s of sources) {
       expect(text).toContain(s.url);
-      expect(text).toContain(s.licence === 'public-domain' ? 'public domain' : 'CC BY-SA 4.0');
+      expect(s.licence).toBe('CC-BY-SA-4.0');
+      expect(text).toContain('CC BY-SA 4.0');
     }
   });
 
@@ -33,6 +34,11 @@ describe('attribution', () => {
     expect(text).toMatch(/re-keyed/i);
     expect(text).toMatch(/truncated/i);
     expect(text).toMatch(/unreviewed/i);
+  });
+
+  it('records why Lane is not shipped, so the next build does not quietly add it back', () => {
+    expect(text).toMatch(/Deferred: Lane's Lexicon/);
+    expect(text).toMatch(/GPL-3\.0/);
   });
 
   it('declares the data licence in package.json, not only the code licence', () => {

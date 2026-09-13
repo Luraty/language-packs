@@ -10,7 +10,7 @@ Language packs for [`@luraty/engine`](https://www.npmjs.com/package/@luraty/engi
 
 | Package | Direction | Keys | Vocabulary covered | Data licence |
 | --- | --- | ---: | ---: | --- |
-| [`@luraty/dict-ar-en`](dict-ar-en/) | Arabic → English, keyed by `@luraty/pack-ar` | 11,951 | 57.6% of 10,000 · 92.0% of top 1,000 | **CC BY-SA 4.0** (Wiktionary) + public domain (Lane) |
+| [`@luraty/dict-ar-en`](dict-ar-en/) | Arabic → English, keyed by `@luraty/pack-ar` | 10,518 | 55.2% of 10,000 · 91.0% of top 1,000 | **CC BY-SA 4.0** (English Wiktionary) |
 
 ```ts
 import { createProfile } from '@luraty/engine';

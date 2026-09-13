@@ -51,7 +51,7 @@ help:
 	@echo '                     ⚠️ Gate is OPEN as of 2026-07-30 — these really will publish,'
 	@echo '                     and the push path has never been exercised. Dry-run first.'
 	@echo '  sync-pack-de       copy the German outputs into @luraty/pack-de in lughaty'
-	@echo '  dict-ar-en         regenerate @luraty/dict-ar-en from the fusha dictionary artifacts'
+	@echo '  dict-ar-en         regenerate @luraty/dict-ar-en from the English Wiktionary artifact'
 	@echo ''
 	@echo '  provenance-update  re-record checksums after a DELIBERATE rebuild. Diff first.'
 	@echo ''

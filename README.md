@@ -122,9 +122,9 @@ built `frequency.txt` + `lemmas.tsv` for a language, wrapped as a ready `Languag
 data files into a TypeScript module (`npm run generate`) and a consumer only runs `npm install`.
 
 [`packs/dict-ar-en`](packs/dict-ar-en/) is the fourth package and not a pack: `@luraty/dict-ar-en`, an
-offline Arabic→English dictionary (English Wiktionary, CC BY-SA 4.0, and Lane's Lexicon, public
-domain) generated from `languages/fusha/out/` and keyed by `@luraty/pack-ar`'s `key()`. `make dict-ar-en`
-rebuilds it.
+offline Arabic→English dictionary (English Wiktionary, CC BY-SA 4.0) generated from
+`languages/fusha/out/dictionary.wiktionary-en.json` and keyed by `@luraty/pack-ar`'s `key()`.
+`make dict-ar-en` rebuilds it.
 
 They moved here from the private Luraty app repository on 2026-09-13, once the engine was on npm —
 until then a public repo could not install it. Nothing was rebuilt in the move: each `0.1.x` ships

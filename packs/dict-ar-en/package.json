@@ -1,14 +1,13 @@
 {
   "name": "@luraty/dict-ar-en",
   "version": "0.1.0",
-  "description": "Offline Arabic→English dictionary keyed by @luraty/pack-ar — English Wiktionary (CC BY-SA 4.0) and Lane's Lexicon (public domain), machine-extracted, per-source attribution.",
+  "description": "Offline Arabic→English dictionary keyed by @luraty/pack-ar — English Wiktionary (CC BY-SA 4.0), machine-extracted, attributed per source.",
   "keywords": [
     "luraty",
     "dictionary",
     "arabic",
     "english",
     "wiktionary",
-    "lane-lexicon",
     "offline"
   ],
   "license": "MIT AND CC-BY-SA-4.0",
@@ -39,7 +38,7 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run check:publish",
     "build": "tsdown",
-    "check:publish": "npm run build && publint --strict && node --input-type=module -e \"const m = await import('@luraty/dict-ar-en'); if (m.lookup('في').length === 0 || m.sources.length !== 2) process.exit(1)\"",
+    "check:publish": "npm run build && publint --strict && node --input-type=module -e \"const m = await import('@luraty/dict-ar-en'); if (m.lookup('في').length === 0 || m.sources.length !== 1) process.exit(1)\"",
     "prepack": "npm run build",
     "prepublishOnly": "npm run typecheck && npm run test && npm run check:publish"
   },

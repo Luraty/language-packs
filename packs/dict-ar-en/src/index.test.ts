@@ -34,26 +34,23 @@ describe('@luraty/dict-ar-en', () => {
     expect(from(tap('عَلَى'), 'wiktionary-en')?.senses[0]).toBe('on, over');
   });
 
-  it('finds كتاب through the article and a conjunction, from both sources', () => {
+  it('finds كتاب through the article and a conjunction', () => {
     const meanings = tap('وَالكِتَابِ');
-    expect(meanings.map((m) => m.source)).toEqual(['wiktionary-en', 'lane']);
+    expect(meanings.map((m) => m.source)).toEqual(['wiktionary-en']);
     expect(from(meanings, 'wiktionary-en')?.senses).toContain('book');
-    expect(from(meanings, 'lane')?.senses[0]).toMatch(/book/);
   });
 
-  it('finds a word only Lane has', () => {
-    // طارئ ("arising unexpectedly") has no English Wiktionary entry in the artifact.
+  it('returns [] for a common word the dictionary lacks, rather than something near it', () => {
+    // طارئ ("emergency, arising unexpectedly") is rank 779 in pack-ar and has no English Wiktionary
+    // entry in the artifact. It had one only from Lane, which is not shipped (see README.md).
     const meanings = tap('الطَّارِئ');
-    expect(meanings.map((m) => m.source)).toEqual(['lane']);
-    expect(meanings[0]?.senses[0]).toMatch(/part\. n\. of/);
-    expect(meanings[0]?.pos).toBeUndefined();
+    expect(meanings).toEqual([]);
+    expect(Object.isFrozen(meanings)).toBe(true);
   });
 
-  it("re-keys a Lane sense by Lane's own headword, where the extract lost the hamza", () => {
-    // The Lane artifact files إِلَى under الى, which pack-ar keys as a different word. The sense
-    // opens with `إِلَى`, so it now sits where `key('إِلَى')` looks.
-    expect(from(tap('إِلَى'), 'lane')?.senses[0]).toMatch(/^إِلَى/);
-    expect(from(tap('الأَرْض'), 'lane')?.senses[0]).toMatch(/^أَرْضٌ/);
+  it('finds إلى and أرض under the hamza spelling pack-ar keys them by', () => {
+    expect(from(tap('إِلَى'), 'wiktionary-en')?.senses[0]).toBe('to, towards');
+    expect(from(tap('الأَرْض'), 'wiktionary-en')?.senses[0]).toBe('earth, land');
   });
 
   it('does NOT file a word under a different word that compare() happens to fold onto it', () => {
@@ -82,8 +79,8 @@ describe('@luraty/dict-ar-en', () => {
     expect(Object.isFrozen(first?.senses)).toBe(true);
   });
 
-  it('names both sources with a licence and a URL', () => {
-    expect(sources.map((s) => s.id)).toEqual(['wiktionary-en', 'lane']);
+  it('names its one source with a licence and a URL', () => {
+    expect(sources.map((s) => s.id)).toEqual(['wiktionary-en']);
     expect(sources.find((s) => s.id === 'wiktionary-en')?.licence).toBe('CC-BY-SA-4.0');
     for (const s of sources) {
       expect(s.url).toMatch(/^https:\/\//);

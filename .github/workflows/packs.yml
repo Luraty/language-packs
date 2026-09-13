@@ -3,10 +3,10 @@ name: packs
 on:
   push:
     branches: [main]
-    # dict-ar-en is generated from the fusha dictionary artifacts, and its drift test reads them.
-    paths: ['packs/**', 'languages/fusha/out/dictionary.*.json', '.github/workflows/packs.yml']
+    # dict-ar-en is generated from the English Wiktionary artifact, and its drift test reads it.
+    paths: ['packs/**', 'languages/fusha/out/dictionary.wiktionary-en.json', '.github/workflows/packs.yml']
   pull_request:
-    paths: ['packs/**', 'languages/fusha/out/dictionary.*.json', '.github/workflows/packs.yml']
+    paths: ['packs/**', 'languages/fusha/out/dictionary.wiktionary-en.json', '.github/workflows/packs.yml']
 
 jobs:
   check:

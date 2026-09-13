@@ -17,7 +17,7 @@ for (const [id, s] of Object.entries(stats)) {
     `  ${id.padEnd(14)} ${String(s.entries).padStart(6)} keys ${String(s.senses).padStart(6)} senses` +
       `   top 10,000 ${pct(s.before.top10000, coverage.vocabulary)} → ${pct(s.top10000, coverage.vocabulary)}` +
       `   top 1,000 ${pct(s.before.top1000, coverage.top)} → ${pct(s.top1000, coverage.top)}` +
-      `   (${s.rekeyedSenses} senses re-keyed, ${s.droppedSenses} dropped)`,
+      `   (${s.droppedSenses} senses dropped)`,
   );
 }
 console.log(
