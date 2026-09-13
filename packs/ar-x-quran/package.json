@@ -1,6 +1,6 @@
 {
   "name": "@luraty/pack-ar-x-quran",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Qur'anic Arabic language pack for @luraty/engine — 10,850 lemmas ranked by Qur'anic frequency, 90,549 surface forms including mushaf spellings.",
   "keywords": [
     "luraty",
