@@ -1,0 +1,62 @@
+{
+  "name": "@luraty/pack-de",
+  "version": "0.1.0",
+  "description": "German language pack for @luraty/engine — 10,000 lemmas ranked from Leipzig news and web text, 15,471 inflected forms lemmatized from Universal Dependencies treebanks.",
+  "keywords": [
+    "luraty",
+    "language-pack",
+    "frequency-list",
+    "lemmatization",
+    "german",
+    "deutsch"
+  ],
+  "license": "MIT AND CC-BY-4.0 AND CC-BY-SA-4.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luraty/language-packs.git",
+    "directory": "packs/de"
+  },
+  "homepage": "https://github.com/Luraty/language-packs/tree/main/packs/de#readme",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "frequency.txt",
+    "lemmas.tsv",
+    "pack.config.json",
+    "ATTRIBUTION.md",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test && npm run check:publish",
+    "try": "node scripts/try.mjs",
+    "build": "tsdown",
+    "check:publish": "npm run build && publint --strict && node --input-type=module -e \"const m = await import('@luraty/pack-de'); if (m.vocabulary.length === 0) process.exit(1)\"",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run check:publish"
+  },
+  "dependencies": {
+    "@luraty/engine": "^0.5.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
+    "publint": "^0.3.22",
+    "tsdown": "^0.22.14"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

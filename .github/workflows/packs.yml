@@ -1,0 +1,29 @@
+name: packs
+
+on:
+  push:
+    branches: [main]
+    paths: ['packs/**', '.github/workflows/packs.yml']
+  pull_request:
+    paths: ['packs/**', '.github/workflows/packs.yml']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [ar, ar-x-quran, de]
+    defaults:
+      run:
+        working-directory: packs/${{ matrix.pack }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: packs/${{ matrix.pack }}/package-lock.json
+      - run: npm ci
+      # typecheck, tests, build, publint, and a plain-Node import of the built package
+      - run: npm run typecheck && npm test && npm run check:publish
