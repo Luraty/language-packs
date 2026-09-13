@@ -29,7 +29,7 @@ QUR_WORDS    := data/quran/quran-words.txt
 LUGHATY      := ../lughaty
 
 .DEFAULT_GOAL := help
-.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar quran publish-de publish-ar publish-quran sync-pack-de
+.PHONY: help check test verify provenance-update corpora-de corpora-ar de ar quran publish-de publish-ar publish-quran sync-pack-de dict-ar-en
 
 help:
 	@echo ''
@@ -51,6 +51,7 @@ help:
 	@echo '                     ⚠️ Gate is OPEN as of 2026-07-30 — these really will publish,'
 	@echo '                     and the push path has never been exercised. Dry-run first.'
 	@echo '  sync-pack-de       copy the German outputs into @luraty/pack-de in lughaty'
+	@echo '  dict-ar-en         regenerate @luraty/dict-ar-en from the fusha dictionary artifacts'
 	@echo ''
 	@echo '  provenance-update  re-record checksums after a DELIBERATE rebuild. Diff first.'
 	@echo ''
@@ -96,6 +97,14 @@ dict-ar:
 segmentation:
 	@python3 builders/check_segmentation.py languages/fusha/out/segmentation.tsv \
 	  --lexicon languages/fusha/out/lemmas.tsv --vocab languages/fusha/out/frequency.msa.txt
+
+# ⚠️ THE PACKAGE IS KEYED BY THE *INSTALLED* @luraty/pack-ar, NOT BY languages/fusha/out/lemmas.tsv.
+# The app looks a tapped word up with `pack.key()` from the pack it ships, so that is the only join
+# that means anything. Bumping pack-ar in packs/dict-ar-en/package.json changes the data, and the
+# package's own drift test fails until this target is re-run.
+dict-ar-en:
+	@cd packs/dict-ar-en && npm install --no-audit --no-fund >/dev/null && npm run --silent generate
+	@cd packs/dict-ar-en && npm test
 
 # Needs CAMeL Tools. ⚠️ Install the DB by name — `camel_data -i light` pulls morphology-db-msa-s31,
 # which requires a PURCHASED LDC licence:
