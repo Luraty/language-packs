@@ -1,0 +1,17 @@
+{
+  "id": "ar",
+  "tokenize": {
+    "strategy": "regex",
+    "pattern": "[\\u0620-\\u065F\\u066E-\\u06D3\\u06D5-\\u06FF]+"
+  },
+  "normalize": [
+    "stripArabicDiacritics",
+    "stripTatweel"
+  ],
+  "compare": [
+    "stripArabicDiacritics",
+    "stripTatweel",
+    "normalizeArabicAlef",
+    "normalizeArabicFinals"
+  ]
+}

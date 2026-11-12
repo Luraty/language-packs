@@ -1,0 +1,32 @@
+[project]
+name = "luraty-packs"
+version = "0.1.0"
+description = "Python port of the Luraty Arabic language packs and the Arabic-English dictionary, plus the luraty-engine JSON CLI."
+readme = "README.md"
+license-files = ["LICENSE", "src/luraty_packs/data/*/ATTRIBUTION.md"]
+requires-python = ">=3.13"
+dependencies = ["luraty-engine"]
+
+[project.urls]
+Repository = "https://github.com/Luraty/language-packs"
+
+[project.scripts]
+luraty-engine = "luraty_cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv.sources]
+# Pinned to a commit until luraty-engine is on PyPI.
+luraty-engine = { git = "https://github.com/Luraty/engine", subdirectory = "python", rev = "bbbb38e54e9eb44c8c24654163c7c7ddf2c04400" }
+
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["luraty_packs", "luraty_cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]

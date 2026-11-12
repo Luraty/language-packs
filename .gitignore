@@ -31,3 +31,11 @@ reports/
 # `git add -A` staged it and pushed an absolute path to one machine's corpus cache. This line does.
 /data
 .venv/
+
+# Python port
+python/.venv/
+python/scripts/node_modules/
+**/__pycache__/
+.pytest_cache/
+# The Python package ships its pack data; the `data/` rule above is for downloaded corpora.
+!/python/src/luraty_packs/data/

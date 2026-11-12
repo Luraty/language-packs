@@ -1,0 +1,12 @@
+{
+  "name": "luraty-packs-parity",
+  "private": true,
+  "description": "The published npm packages the Python port's parity fixtures are generated from.",
+  "type": "module",
+  "dependencies": {
+    "@luraty/dict-ar-en": "0.1.0",
+    "@luraty/engine": "0.5.1",
+    "@luraty/pack-ar": "0.1.0",
+    "@luraty/pack-ar-x-quran": "0.1.1"
+  }
+}
